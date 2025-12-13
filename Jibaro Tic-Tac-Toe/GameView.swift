@@ -30,6 +30,18 @@ struct GameView: View {
                     // Tablero de juego
                     gameBoard
 
+                    // Mensaje cuando Luna gana
+                    if gameLogic.gameMode == .lunaMode && gameLogic.isGameOver && gameLogic.winner == .player1 {
+                        Text("¡Luna ganó! ✨🎉")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.pink.opacity(0.3))
+                            )
+                    }
+
                     // Botón de nueva partida
                     newGameButton
 
@@ -147,21 +159,21 @@ struct GameView: View {
             ScoreCard(
                 icon: dataManager.getPlayerEmoji(for: .player1),
                 count: gameLogic.getPlayerWins(for: .player1),
-                color: .pink
+                color: .scorePlayer1
             )
 
             // Empates
             ScoreCard(
                 icon: "🏆",
                 count: gameLogic.getPlayerWins(for: .none),
-                color: .orange
+                color: .scoreDraw
             )
 
             // Score del jugador 2
             ScoreCard(
                 icon: dataManager.getPlayerEmoji(for: .player2),
                 count: gameLogic.getPlayerWins(for: .player2),
-                color: gameLogic.gameMode == .lunaMode ? .blue : .green
+                color: .scorePlayer2
             )
         }
     }
@@ -184,26 +196,34 @@ struct GameView: View {
 
     // MARK: - Game Board
     private var gameBoard: some View {
-        VStack(spacing: 8) {
-            ForEach(0..<3, id: \.self) { row in
-                HStack(spacing: 8) {
-                    ForEach(0..<3, id: \.self) { col in
-                        GameCell(
-                            emoji: gameLogic.getCellEmoji(row: row, col: col),
-                            gameMode: gameLogic.gameMode
-                        ) {
-                            gameLogic.makeMove(row: row, col: col)
+        ZStack {
+            // Background
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.9))
+                .frame(width: 350, height: 350)
+                .doubleShadow()
+
+            // Grid Lines (non-interactive)
+            TicTacToeGridLines(gameMode: gameLogic.gameMode)
+
+            // Game Cells (interactive buttons - MUST be last/on top)
+            VStack(spacing: 0) {
+                ForEach(0..<3, id: \.self) { row in
+                    HStack(spacing: 0) {
+                        ForEach(0..<3, id: \.self) { col in
+                            GameCell(
+                                emoji: gameLogic.getCellEmoji(row: row, col: col),
+                                gameMode: gameLogic.gameMode
+                            ) {
+                                gameLogic.makeMove(row: row, col: col)
+                            }
                         }
                     }
                 }
             }
+            .frame(width: 350, height: 350)
+            .allowsHitTesting(true)
         }
-        .padding(15)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.9))
-                .cardShadow()
-        )
     }
 
     // MARK: - New Game Button
@@ -228,7 +248,7 @@ struct GameView: View {
             )
         }
         .buttonAnimation()
-        .cardShadow()
+        .doubleShadow()
     }
 
     private var newGameButtonIcon: String {
@@ -258,25 +278,32 @@ struct GameView: View {
         }
     }
 
-    // MARK: - Magical Effects
+
+    // MARK: - Clean Confetti Effects (legacy - keeping for other modes)
     private var magicalEffectsOverlay: some View {
         ZStack {
-            ForEach(0..<10, id: \.self) { _ in
-                Text(String.randomCelebrationEmoji())
-                    .font(.largeTitle)
+            // Fluid colored circles confetti
+            ForEach(0..<20, id: \.self) { index in
+                Circle()
+                    .fill(confettiColors.randomElement() ?? Color.pink)
+                    .frame(width: 12, height: 12)
                     .position(
-                        x: CGFloat.random(in: 50...350),
-                        y: CGFloat.random(in: 100...600)
+                        x: CGFloat.random(in: 30...UIScreen.main.bounds.width - 30),
+                        y: showMagicalEffect ? UIScreen.main.bounds.height + 50 : CGFloat.random(in: -50...0)
                     )
-                    .opacity(showMagicalEffect ? 1 : 0)
-                    .scaleEffect(showMagicalEffect ? 1.5 : 0.1)
+                    .opacity(showMagicalEffect ? 0.8 : 0)
                     .animation(
-                        .easeOut(duration: 1.0).delay(Double.random(in: 0...0.5)),
+                        .linear(duration: Double.random(in: 2.0...3.5))
+                        .delay(Double(index) * 0.1),
                         value: showMagicalEffect
                     )
             }
         }
         .allowsHitTesting(false)
+    }
+
+    private var confettiColors: [Color] {
+        [.pink, .purple, .orange, .blue, .green, .yellow, .red]
     }
 
     // MARK: - Helper Methods
@@ -325,8 +352,64 @@ struct ScoreCard: View {
         .background(
             RoundedRectangle(cornerRadius: 15)
                 .fill(color.opacity(0.8))
-                .cardShadow()
+                .doubleShadow()
         )
+    }
+}
+
+// MARK: - Grid Lines Component
+struct TicTacToeGridLines: View {
+    let gameMode: GameMode
+
+    var body: some View {
+        ZStack {
+            // Vertical lines
+            HStack(spacing: 0) {
+                Spacer()
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(lineGradient)
+                    .frame(width: 5, height: 270)
+                Spacer()
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(lineGradient)
+                    .frame(width: 5, height: 270)
+                Spacer()
+            }
+            .frame(width: 350)
+
+            // Horizontal lines
+            VStack(spacing: 0) {
+                Spacer()
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(lineGradient)
+                    .frame(width: 270, height: 5)
+                Spacer()
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(lineGradient)
+                    .frame(width: 270, height: 5)
+                Spacer()
+            }
+            .frame(height: 350)
+        }
+        .drawingGroup()
+        .allowsHitTesting(false)
+    }
+
+    private var lineGradient: LinearGradient {
+        switch gameMode {
+        case .lunaMode:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.pink.opacity(0.8), Color.purple.opacity(0.6)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .unbeatableMode:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.black, Color.gray.opacity(0.8)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
     }
 }
 
@@ -343,21 +426,16 @@ struct GameCell: View {
             action()
         }) {
             Text(emoji)
-                .font(.system(size: 40))
-                .frame(width: 80, height: 80)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(strokeColor, lineWidth: strokeWidth)
-                        )
-                )
+                .font(.system(size: 45))
+                .fontWeight(.bold)
+                .frame(width: 116, height: 116)
+                .contentShape(Rectangle())
                 .scaleEffect(isPressed ? 0.95 : 1.0)
+                .animation(.easeInOut(duration: 0.3), value: isPressed)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: emoji)
         }
         .buttonStyle(PlainButtonStyle())
-        .animation(.easeInOut(duration: 0.1), value: emoji)
-        .animation(.easeInOut(duration: 0.1), value: isPressed)
+        .contentShape(Rectangle())
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
             isPressed = pressing
         }, perform: {})
@@ -368,24 +446,6 @@ struct GameCell: View {
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
         #endif
-    }
-
-    private var strokeColor: Color {
-        switch gameMode {
-        case .lunaMode:
-            return Color.pink.opacity(0.6)
-        case .unbeatableMode:
-            return Color.black
-        }
-    }
-
-    private var strokeWidth: CGFloat {
-        switch gameMode {
-        case .lunaMode:
-            return 2
-        case .unbeatableMode:
-            return 3
-        }
     }
 }
 

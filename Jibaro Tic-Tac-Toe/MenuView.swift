@@ -7,7 +7,7 @@ struct MenuView: View {
         NavigationView {
             ZStack {
                 // Fondo degradado
-                LinearGradient.lunaMode
+                LinearGradient.mainMenu
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -19,9 +19,6 @@ struct MenuView: View {
 
                         // Tarjetas de modos de juego
                         gameModesSection
-
-                        // Emojis decorativos
-                        decorativeEmojis
 
                         Spacer(minLength: 30)
                     }
@@ -88,20 +85,6 @@ struct MenuView: View {
         }
     }
 
-    // MARK: - Decorative Emojis
-    private var decorativeEmojis: some View {
-        HStack(spacing: 40) {
-            Text("💕")
-                .font(.title)
-
-            Text("🌈")
-                .font(.title)
-
-            Text("✨")
-                .font(.title)
-        }
-        .opacity(0.8)
-    }
 }
 
 // MARK: - Game Mode Card Component
@@ -160,11 +143,12 @@ struct GameModeCard: View {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(gradientForMode(mode))
             )
-            .cardShadow()
+            .doubleShadow()
         }
         .buttonStyle(PlainButtonStyle())
         .scaleEffect(1.0)
-        .animation(.easeInOut(duration: 0.1), value: UUID())
+        .animation(.easeInOut(duration: 0.3), value: UUID())
+        .drawingGroup()
     }
 
     private func gradientForMode(_ mode: GameMode) -> LinearGradient {

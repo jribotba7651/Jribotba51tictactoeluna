@@ -19,14 +19,16 @@ struct SettingsView: View {
                         PlayerConfigurationSection(
                             title: "Jugador 1",
                             playerConfig: $dataManager.player1Config,
-                            borderColor: .pink
+                            borderColor: .pink,
+                            titleColor: .playerTitlePink
                         )
 
                         // Configuración del Jugador 2
                         PlayerConfigurationSection(
                             title: "Jugador 2",
                             playerConfig: $dataManager.player2Config,
-                            borderColor: .blue
+                            borderColor: .blue,
+                            titleColor: .playerTitleBlue
                         )
 
                         // Configuración del juego
@@ -69,9 +71,9 @@ struct SettingsView: View {
 
                     // Título
                     Text("Configuración")
-                        .font(.title2)
+                        .font(.system(size: 20))
                         .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
 
                     Spacer()
 
@@ -105,32 +107,43 @@ struct PlayerConfigurationSection: View {
     let title: String
     @Binding var playerConfig: PlayerConfig
     let borderColor: Color
+    let titleColor: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Título de la sección
             Text(title)
-                .font(.title2)
+                .font(.system(size: 20))
                 .fontWeight(.bold)
-                .foregroundColor(.primary)
+                .foregroundColor(titleColor)
+                .textShadow()
 
             VStack(spacing: 20) {
                 // Campo de nombre
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Nombre:")
                         .font(.headline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black)
 
                     TextField("Nombre del jugador", text: $playerConfig.name)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
                         .font(.title3)
+                        .foregroundColor(.black)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.black.opacity(0.8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(borderColor.opacity(0.6), lineWidth: 2)
+                                )
+                        )
                 }
 
                 // Selector de emoji
                 VStack(alignment: .leading, spacing: 15) {
                     Text("Emoji:")
                         .font(.headline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black)
 
                     EmojiSelectionGrid(
                         selectedEmoji: $playerConfig.emoji,
@@ -179,7 +192,7 @@ struct EmojiSelectionGrid: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 .scaleEffect(selectedEmoji == emoji ? 1.1 : 1.0)
-                .animation(.easeInOut(duration: 0.2), value: selectedEmoji)
+                .animation(.easeInOut(duration: 0.3), value: selectedEmoji)
             }
         }
     }
@@ -193,16 +206,17 @@ struct GameConfigurationSection: View {
         VStack(alignment: .leading, spacing: 20) {
             // Título de la sección
             Text("Configuración del Juego")
-                .font(.title2)
+                .font(.system(size: 20))
                 .fontWeight(.bold)
-                .foregroundColor(.primary)
+                .foregroundColor(.playerTitlePurple)
+                .textShadow()
 
             VStack(spacing: 20) {
                 // Toggle de sonido
                 HStack {
                     Text("Sonidos del juego:")
                         .font(.headline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black)
 
                     Spacer()
 
