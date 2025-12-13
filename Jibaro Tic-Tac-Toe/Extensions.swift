@@ -81,8 +81,8 @@ extension LinearGradient {
     // Gradiente para botones de Luna Mode
     static let lunaModeButton = LinearGradient(
         gradient: Gradient(colors: [
-            Color.pink.opacity(0.8),
-            Color.red.opacity(0.6)
+            Color.pink,
+            Color.red
         ]),
         startPoint: .leading,
         endPoint: .trailing

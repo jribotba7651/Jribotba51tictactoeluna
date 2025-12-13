@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2F6CD2E22EEE15E70044BC80 /* ConfettiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CD2E12EEE15E70044BC80 /* ConfettiView.swift */; };
 		3D0E1A2B2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E1A2A2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift */; };
 		3D0E1A2D2B5F1A1000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E1A2C2B5F1A1000000001 /* ContentView.swift */; };
 		3D0E1A2F2B5F1A1200000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3D0E1A2E2B5F1A1200000001 /* Assets.xcassets */; };
@@ -21,6 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2F6CD2E12EEE15E70044BC80 /* ConfettiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiView.swift; sourceTree = "<group>"; };
 		3D0E1A272B5F1A1000000001 /* Jibaro Tic-Tac-Toe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Jibaro Tic-Tac-Toe.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D0E1A2A2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Jibaro_Tic_Tac_ToeApp.swift; sourceTree = "<group>"; };
 		3D0E1A2C2B5F1A1000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 				3D0E1A3A2B5F1A3500000001 /* GameView.swift */,
 				3D0E1A3C2B5F1A3A00000001 /* SettingsView.swift */,
 				3D0E1A3E2B5F1A4000000001 /* GameLogic.swift */,
+				2F6CD2E12EEE15E70044BC80 /* ConfettiView.swift */,
 				3D0E1A402B5F1A4500000001 /* DataManager.swift */,
 				3D0E1A422B5F1A4A00000001 /* Models.swift */,
 				3D0E1A442B5F1A5000000001 /* Extensions.swift */,
@@ -166,6 +169,7 @@
 				3D0E1A412B5F1A4500000001 /* DataManager.swift in Sources */,
 				3D0E1A392B5F1A3000000001 /* MenuView.swift in Sources */,
 				3D0E1A2B2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift in Sources */,
+				2F6CD2E22EEE15E70044BC80 /* ConfettiView.swift in Sources */,
 				3D0E1A3D2B5F1A3A00000001 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

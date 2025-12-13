@@ -260,9 +260,17 @@ class GameLogic: ObservableObject {
         case .empty:
             return ""
         case .player1:
-            return dataManager.getPlayerEmoji(for: .player1)
+            if gameMode == .unbeatableMode {
+                return "○" // Símbolo para Unbeatable Mode
+            } else {
+                return dataManager.getPlayerEmoji(for: .player1)
+            }
         case .player2:
-            return dataManager.getPlayerEmoji(for: .player2)
+            if gameMode == .unbeatableMode {
+                return "×" // Símbolo para Unbeatable Mode
+            } else {
+                return dataManager.getPlayerEmoji(for: .player2)
+            }
         }
     }
 

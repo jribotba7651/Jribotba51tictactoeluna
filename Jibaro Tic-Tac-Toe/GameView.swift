@@ -4,54 +4,58 @@ struct GameView: View {
     @ObservedObject var gameLogic: GameLogic
     @StateObject private var dataManager = DataManager.shared
     @State private var showMagicalEffect = false
+    @State private var showConfetti = false
 
     var body: some View {
         NavigationView {
-            ZStack {
-                // Fondo según el modo de juego
-                backgroundGradient
-                    .ignoresSafeArea()
+            GeometryReader { geometry in
+                ZStack {
+                    // Fondo según el modo de juego
+                    backgroundGradient
+                        .ignoresSafeArea()
 
-                VStack(spacing: 20) {
-                    Spacer(minLength: 10)
+                    VStack(spacing: 12) {
+                        Spacer(minLength: 5)
 
-                    // Header
-                    headerSection
+                        // Header
+                        headerSection
 
-                    // Espacio de anuncio
-                    advertisementSection
+                        // Espacio de anuncio
+                        advertisementSection
 
-                    // Marcadores
-                    scoreSection
+                        // Marcadores
+                        scoreSection
 
-                    // Mensaje del juego
-                    gameMessageSection
+                        // Mensaje cuando Luna gana
+                        if gameLogic.gameMode == .lunaMode && gameLogic.isGameOver && gameLogic.winner == .player1 {
+                            Text("¡Luna ganó! ✨🎉")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color.pink.opacity(0.3))
+                                )
+                        }
 
-                    // Tablero de juego
-                    gameBoard
+                        // Mensaje del juego
+                        gameMessageSection
 
-                    // Mensaje cuando Luna gana
-                    if gameLogic.gameMode == .lunaMode && gameLogic.isGameOver && gameLogic.winner == .player1 {
-                        Text("¡Luna ganó! ✨🎉")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color.pink.opacity(0.3))
-                            )
+                        // Tablero de juego
+                        gameBoard(for: geometry)
+
+                        // Botón de nueva partida
+                        newGameButton
+
+                        Spacer(minLength: 10)
                     }
+                    .padding(.horizontal, 20)
+                    .confetti(isActive: $showConfetti)
 
-                    // Botón de nueva partida
-                    newGameButton
-
-                    Spacer(minLength: 20)
-                }
-                .padding(.horizontal, 20)
-
-                // Efectos mágicos para Luna Mode
-                if gameLogic.gameMode == .lunaMode && showMagicalEffect {
-                    magicalEffectsOverlay
+                    // Efectos mágicos para Luna Mode
+                    if gameLogic.gameMode == .lunaMode && showMagicalEffect {
+                        magicalEffectsOverlay(in: geometry)
+                    }
                 }
             }
         }
@@ -62,6 +66,10 @@ struct GameView: View {
         .onChange(of: gameLogic.isGameOver) { _, isGameOver in
             if isGameOver && gameLogic.winner == .player1 && gameLogic.gameMode == .lunaMode {
                 triggerMagicalEffect()
+                showConfetti = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    showConfetti = false
+                }
             }
             if isGameOver {
                 triggerWinHaptic()
@@ -144,7 +152,7 @@ struct GameView: View {
     private var advertisementSection: some View {
         RoundedRectangle(cornerRadius: 15)
             .fill(Color.black.opacity(0.1))
-            .frame(height: 80)
+            .frame(height: 60)
             .overlay(
                 Text("Advertisement")
                     .font(.headline)
@@ -157,23 +165,26 @@ struct GameView: View {
         HStack(spacing: 15) {
             // Score del jugador 1
             ScoreCard(
-                icon: dataManager.getPlayerEmoji(for: .player1),
+                icon: gameLogic.gameMode == .unbeatableMode ? "○" : dataManager.getPlayerEmoji(for: .player1),
                 count: gameLogic.getPlayerWins(for: .player1),
-                color: .scorePlayer1
+                color: Color(hex: "#10B981"), // Verde esmeralda
+                gameMode: gameLogic.gameMode
             )
 
             // Empates
             ScoreCard(
                 icon: "🏆",
                 count: gameLogic.getPlayerWins(for: .none),
-                color: .scoreDraw
+                color: Color(hex: "#FB923C"), // Naranja
+                gameMode: gameLogic.gameMode
             )
 
             // Score del jugador 2
             ScoreCard(
-                icon: dataManager.getPlayerEmoji(for: .player2),
+                icon: gameLogic.gameMode == .unbeatableMode ? "×" : dataManager.getPlayerEmoji(for: .player2),
                 count: gameLogic.getPlayerWins(for: .player2),
-                color: .scorePlayer2
+                color: Color(hex: "#60A5FA"), // Azul
+                gameMode: gameLogic.gameMode
             )
         }
     }
@@ -186,25 +197,80 @@ struct GameView: View {
             .foregroundColor(.white)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 20)
-            .padding(.vertical, 15)
+            .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.white.opacity(0.2))
+                    .fill(gameMessageBackground)
                     .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
             )
     }
 
+    private var gameMessageBackground: AnyShapeStyle {
+        if gameLogic.gameMode == .lunaMode {
+            return AnyShapeStyle(.ultraThinMaterial)
+        } else {
+            return AnyShapeStyle(Color.white.opacity(0.2))
+        }
+    }
+
     // MARK: - Game Board
-    private var gameBoard: some View {
-        ZStack {
+    private func gameBoard(for geometry: GeometryProxy) -> some View {
+        let screenWidth = geometry.size.width
+        let screenHeight = geometry.size.height
+        let boardSize = min(screenWidth * 0.92, screenHeight * 0.50, 450)
+        let cellSize = (boardSize - 10) / 3
+        let lineLength = boardSize * 0.8
+
+        return ZStack {
             // Background
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white.opacity(0.9))
-                .frame(width: 350, height: 350)
+                .frame(width: boardSize, height: boardSize)
                 .doubleShadow()
 
             // Grid Lines (non-interactive)
-            TicTacToeGridLines(gameMode: gameLogic.gameMode)
+            ZStack {
+                // Líneas verticales
+                HStack {
+                    Spacer()
+                        .frame(width: cellSize + 5)
+
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(lineGradient)
+                        .frame(width: 5, height: lineLength)
+
+                    Spacer()
+                        .frame(width: cellSize)
+
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(lineGradient)
+                        .frame(width: 5, height: lineLength)
+
+                    Spacer()
+                        .frame(width: cellSize + 5)
+                }
+
+                // Líneas horizontales
+                VStack {
+                    Spacer()
+                        .frame(height: cellSize + 5)
+
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(lineGradient)
+                        .frame(width: lineLength, height: 5)
+
+                    Spacer()
+                        .frame(height: cellSize)
+
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(lineGradient)
+                        .frame(width: lineLength, height: 5)
+
+                    Spacer()
+                        .frame(height: cellSize + 5)
+                }
+            }
+            .allowsHitTesting(false)
 
             // Game Cells (interactive buttons - MUST be last/on top)
             VStack(spacing: 0) {
@@ -213,7 +279,8 @@ struct GameView: View {
                         ForEach(0..<3, id: \.self) { col in
                             GameCell(
                                 emoji: gameLogic.getCellEmoji(row: row, col: col),
-                                gameMode: gameLogic.gameMode
+                                gameMode: gameLogic.gameMode,
+                                cellSize: cellSize
                             ) {
                                 gameLogic.makeMove(row: row, col: col)
                             }
@@ -221,8 +288,25 @@ struct GameView: View {
                     }
                 }
             }
-            .frame(width: 350, height: 350)
+            .frame(width: boardSize, height: boardSize)
             .allowsHitTesting(true)
+        }
+    }
+
+    private var lineGradient: LinearGradient {
+        switch gameLogic.gameMode {
+        case .lunaMode:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.pink, Color.purple, Color.orange]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .unbeatableMode:
+            return LinearGradient(
+                gradient: Gradient(colors: [Color.black, Color.gray.opacity(0.8)]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
 
@@ -241,7 +325,7 @@ struct GameView: View {
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
+            .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 20)
                     .fill(newGameButtonGradient)
@@ -254,7 +338,7 @@ struct GameView: View {
     private var newGameButtonIcon: String {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return "❤️"
+            return "💓"
         case .unbeatableMode:
             return "🔄"
         }
@@ -279,26 +363,45 @@ struct GameView: View {
     }
 
 
-    // MARK: - Clean Confetti Effects (legacy - keeping for other modes)
-    private var magicalEffectsOverlay: some View {
+    // MARK: - Confetti Effects
+    private func magicalEffectsOverlay(in geometry: GeometryProxy) -> some View {
         ZStack {
-            // Fluid colored circles confetti
+            // Círculos de colores cayendo
             ForEach(0..<20, id: \.self) { index in
                 Circle()
                     .fill(confettiColors.randomElement() ?? Color.pink)
-                    .frame(width: 12, height: 12)
-                    .position(
-                        x: CGFloat.random(in: 30...UIScreen.main.bounds.width - 30),
-                        y: showMagicalEffect ? UIScreen.main.bounds.height + 50 : CGFloat.random(in: -50...0)
+                    .frame(width: CGFloat.random(in: 4...8), height: CGFloat.random(in: 4...8))
+                    .offset(
+                        x: CGFloat.random(in: -geometry.size.width/2...geometry.size.width/2),
+                        y: showMagicalEffect ? geometry.size.height : CGFloat.random(in: -100...0)
                     )
-                    .opacity(showMagicalEffect ? 0.8 : 0)
+                    .opacity(showMagicalEffect ? 0.9 : 0)
                     .animation(
-                        .linear(duration: Double.random(in: 2.0...3.5))
+                        .linear(duration: Double.random(in: 1.5...3.0))
+                        .delay(Double(index) * 0.08),
+                        value: showMagicalEffect
+                    )
+            }
+
+            // Estrellas girando
+            ForEach(0..<15, id: \.self) { index in
+                Text("✨")
+                    .font(.system(size: CGFloat.random(in: 12...16)))
+                    .offset(
+                        x: CGFloat.random(in: -geometry.size.width/2...geometry.size.width/2),
+                        y: showMagicalEffect ? geometry.size.height : CGFloat.random(in: -100...0)
+                    )
+                    .opacity(showMagicalEffect ? 1.0 : 0)
+                    .rotationEffect(.degrees(showMagicalEffect ? Double.random(in: 0...720) : 0))
+                    .animation(
+                        .linear(duration: Double.random(in: 2.0...4.0))
                         .delay(Double(index) * 0.1),
                         value: showMagicalEffect
                     )
             }
         }
+        .frame(height: 0)
+        .clipped()
         .allowsHitTesting(false)
     }
 
@@ -336,11 +439,13 @@ struct ScoreCard: View {
     let icon: String
     let count: Int
     let color: Color
+    let gameMode: GameMode
 
     var body: some View {
         VStack(spacing: 8) {
             Text(icon)
                 .font(.largeTitle)
+                .foregroundColor(iconColor)
 
             Text("\(count)")
                 .font(.title2)
@@ -348,75 +453,32 @@ struct ScoreCard: View {
                 .foregroundColor(.white)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 15)
+        .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 15)
                 .fill(color.opacity(0.8))
                 .doubleShadow()
         )
     }
-}
 
-// MARK: - Grid Lines Component
-struct TicTacToeGridLines: View {
-    let gameMode: GameMode
-
-    var body: some View {
-        ZStack {
-            // Vertical lines
-            HStack(spacing: 0) {
-                Spacer()
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(lineGradient)
-                    .frame(width: 5, height: 270)
-                Spacer()
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(lineGradient)
-                    .frame(width: 5, height: 270)
-                Spacer()
+    private var iconColor: Color {
+        if gameMode == .unbeatableMode {
+            if icon == "○" {
+                return .gray
+            } else if icon == "×" {
+                return .black
             }
-            .frame(width: 350)
-
-            // Horizontal lines
-            VStack(spacing: 0) {
-                Spacer()
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(lineGradient)
-                    .frame(width: 270, height: 5)
-                Spacer()
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(lineGradient)
-                    .frame(width: 270, height: 5)
-                Spacer()
-            }
-            .frame(height: 350)
         }
-        .drawingGroup()
-        .allowsHitTesting(false)
-    }
-
-    private var lineGradient: LinearGradient {
-        switch gameMode {
-        case .lunaMode:
-            return LinearGradient(
-                gradient: Gradient(colors: [Color.pink.opacity(0.8), Color.purple.opacity(0.6)]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        case .unbeatableMode:
-            return LinearGradient(
-                gradient: Gradient(colors: [Color.black, Color.gray.opacity(0.8)]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
+        return .white // Color por defecto
     }
 }
+
 
 // MARK: - Game Cell Component
 struct GameCell: View {
     let emoji: String
     let gameMode: GameMode
+    let cellSize: CGFloat
     let action: () -> Void
     @State private var isPressed = false
 
@@ -426,9 +488,10 @@ struct GameCell: View {
             action()
         }) {
             Text(emoji)
-                .font(.system(size: 45))
+                .font(.system(size: cellSize * 0.4))
                 .fontWeight(.bold)
-                .frame(width: 116, height: 116)
+                .foregroundColor(symbolColor)
+                .frame(width: cellSize, height: cellSize)
                 .contentShape(Rectangle())
                 .scaleEffect(isPressed ? 0.95 : 1.0)
                 .animation(.easeInOut(duration: 0.3), value: isPressed)
@@ -439,6 +502,17 @@ struct GameCell: View {
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
             isPressed = pressing
         }, perform: {})
+    }
+
+    private var symbolColor: Color {
+        if gameMode == .unbeatableMode {
+            if emoji == "○" {
+                return Color.gray // Gris para Unbeatable (○)
+            } else if emoji == "×" {
+                return Color.black // Negro para Unbeatable (×)
+            }
+        }
+        return Color.primary // Color por defecto para otros modos
     }
 
     private func triggerHaptic() {

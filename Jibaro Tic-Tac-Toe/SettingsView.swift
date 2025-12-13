@@ -238,7 +238,7 @@ struct GameConfigurationSection: View {
                             .font(.headline)
                             .fontWeight(.semibold)
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 15)
                     .background(
