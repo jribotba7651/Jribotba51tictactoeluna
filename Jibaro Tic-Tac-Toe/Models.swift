@@ -46,7 +46,7 @@ enum GameMode: CaseIterable {
     }
 }
 
-enum Player: String, CaseIterable {
+enum Player: String, CaseIterable, Equatable {
     case player1 = "player1"
     case player2 = "player2"
     case none = "none"
@@ -60,7 +60,7 @@ enum Player: String, CaseIterable {
     }
 }
 
-enum GameState {
+enum GameState: Equatable {
     case menu
     case playing
     case gameOver(winner: Player)
