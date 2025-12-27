@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Combine
 
 struct ConfettiView: UIViewRepresentable {
     let isActive: Bool
@@ -9,6 +10,7 @@ struct ConfettiView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: ConfettiUIView, context: Context) {
+        print("🎊 ConfettiView: updateUIView called with isActive = \(isActive)")
         if isActive {
             uiView.startConfetti()
         } else {
@@ -32,9 +34,9 @@ class ConfettiUIView: UIView {
 
     private func setupEmitter() {
         let emitter = CAEmitterLayer()
-        emitter.emitterPosition = CGPoint(x: bounds.midX, y: -50)
+        emitter.emitterPosition = CGPoint(x: 200, y: -50)
         emitter.emitterShape = .line
-        emitter.emitterSize = CGSize(width: bounds.width, height: 1)
+        emitter.emitterSize = CGSize(width: 400, height: 1)
 
         // Células de confetti
         let colors: [UIColor] = [
@@ -133,16 +135,23 @@ class ConfettiUIView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        print("🎊 ConfettiUIView: layoutSubviews - bounds: \(bounds)")
         emitterLayer?.emitterPosition = CGPoint(x: bounds.midX, y: -50)
         emitterLayer?.emitterSize = CGSize(width: bounds.width, height: 1)
     }
 
     func startConfetti() {
+        print("🎊 ConfettiUIView: Starting confetti animation")
         emitterLayer?.birthRate = 1.0
 
-        // Detener automáticamente después de 3 segundos
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            self.stopConfetti()
+        // Hacer más visible aumentando el birth rate temporalmente
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.emitterLayer?.birthRate = 2.0
+        }
+
+        // Volver a normal después de 1 segundo
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.emitterLayer?.birthRate = 1.0
         }
     }
 
@@ -158,6 +167,7 @@ extension View {
             ConfettiView(isActive: isActive.wrappedValue)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .allowsHitTesting(false)
+                .id(isActive.wrappedValue) // Force recreation when state changes
         )
     }
 }

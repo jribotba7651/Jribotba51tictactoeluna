@@ -3,8 +3,10 @@ import SwiftUI
 struct GameView: View {
     @ObservedObject var gameLogic: GameLogic
     @StateObject private var dataManager = DataManager.shared
+    @StateObject private var interstitialAdManager = InterstitialAdManager()
     @State private var showMagicalEffect = false
     @State private var showConfetti = false
+    @State private var gamesPlayedCount = 0
 
     var body: some View {
         NavigationView {
@@ -27,7 +29,7 @@ struct GameView: View {
                         scoreSection
 
                         // Mensaje cuando Luna gana
-                        if gameLogic.gameMode == .lunaMode && gameLogic.isGameOver && gameLogic.winner == .player1 {
+                        if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) && gameLogic.isGameOver && gameLogic.winner == .player1 {
                             Text("¡Luna ganó! ✨🎉")
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.white)
@@ -52,8 +54,8 @@ struct GameView: View {
                     .padding(.horizontal, 20)
                     .confetti(isActive: $showConfetti)
 
-                    // Efectos mágicos para Luna Mode
-                    if gameLogic.gameMode == .lunaMode && showMagicalEffect {
+                    // Efectos mágicos para Luna Mode e Infinity Level
+                    if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) && showMagicalEffect {
                         magicalEffectsOverlay(in: geometry)
                     }
                 }
@@ -62,17 +64,30 @@ struct GameView: View {
         .navigationBarHidden(true)
         .onAppear {
             gameLogic.resetGame()
+            print("🔍 GameView onAppear - PurchaseManager.shared.hasRemovedAds: \(PurchaseManager.shared.hasRemovedAds)")
         }
         .onChange(of: gameLogic.isGameOver) { _, isGameOver in
-            if isGameOver && gameLogic.winner == .player1 && gameLogic.gameMode == .lunaMode {
+            if isGameOver && gameLogic.winner == .player1 && (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) {
+                print("🎊 CONFETTI TRIGGERED: Luna Mode Win!")
                 triggerMagicalEffect()
                 showConfetti = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                     showConfetti = false
+                    print("🎊 CONFETTI STOPPED")
                 }
             }
             if isGameOver {
                 triggerWinHaptic()
+
+                // Mostrar anuncio intersticial cada 10 partidas (si no se han removido los anuncios)
+                gamesPlayedCount += 1
+                print("🎮 Games played: \(gamesPlayedCount)")
+                if interstitialAdManager.shouldShowAdAfterGames(gamesPlayedCount) {
+                    print("🎬 Should show interstitial ad now!")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        interstitialAdManager.presentInterstitialAd()
+                    }
+                }
             }
         }
     }
@@ -84,6 +99,8 @@ struct GameView: View {
             return LinearGradient.lunaMode
         case .unbeatableMode:
             return LinearGradient.unbeatableMode
+        case .infinityLevel:
+            return LinearGradient.lunaMode // Usa el mismo gradiente que Luna Mode
         }
     }
 
@@ -98,7 +115,7 @@ struct GameView: View {
                     Image(systemName: "chevron.left")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text(gameLogic.gameMode == .lunaMode ? "Menú" : "Menu")
+                    Text((gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) ? "Menú" : "Menu")
                         .font(.headline)
                         .fontWeight(.semibold)
                 }
@@ -145,19 +162,44 @@ struct GameView: View {
             return "🌙 Luna Mode"
         case .unbeatableMode:
             return "🤖 Unbeatable Mode"
+        case .infinityLevel:
+            return "∞ Infinity Level"
         }
     }
 
     // MARK: - Advertisement Section
     private var advertisementSection: some View {
-        RoundedRectangle(cornerRadius: 15)
-            .fill(Color.black.opacity(0.1))
-            .frame(height: 60)
-            .overlay(
-                Text("Advertisement")
-                    .font(.headline)
-                    .foregroundColor(.white.opacity(0.6))
-            )
+        let hasRemovedAds = PurchaseManager.shared.hasRemovedAds
+
+        return Group {
+            if !hasRemovedAds {
+                ZStack {
+                    // Placeholder background
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(Color.white.opacity(0.3))
+                        .frame(height: 60)
+
+                    Text(" ")
+                        .font(.caption2)
+                        .foregroundColor(.clear)
+                        .onAppear {
+                            print("🔍 Advertisement placeholder appeared, hasRemovedAds: \(hasRemovedAds)")
+                        }
+
+                    // Banner ad on top (cuando cargue, cubrirá el placeholder)
+                    AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Real Banner ID
+                        .frame(height: 60)
+                }
+                .frame(height: 60)
+                .cornerRadius(15)
+            } else {
+                // Espacio mínimo cuando los anuncios están removidos
+                Color.clear.frame(height: 8)
+                    .onAppear {
+                        print("🚫 Ads removed section appeared")
+                    }
+            }
+        }
     }
 
     // MARK: - Score Section
@@ -206,7 +248,7 @@ struct GameView: View {
     }
 
     private var gameMessageBackground: AnyShapeStyle {
-        if gameLogic.gameMode == .lunaMode {
+        if gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel {
             return AnyShapeStyle(.ultraThinMaterial)
         } else {
             return AnyShapeStyle(Color.white.opacity(0.2))
@@ -215,68 +257,23 @@ struct GameView: View {
 
     // MARK: - Game Board
     private func gameBoard(for geometry: GeometryProxy) -> some View {
-        let screenWidth = geometry.size.width
-        let screenHeight = geometry.size.height
-        let boardSize = min(screenWidth * 0.92, screenHeight * 0.50, 450)
-        let cellSize = (boardSize - 10) / 3
-        let lineLength = boardSize * 0.8
+        let boardSize: CGFloat = min(geometry.size.width - 40, 350)
+        let cellSize: CGFloat = boardSize / 3
 
-        return ZStack {
-            // Background
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.9))
-                .frame(width: boardSize, height: boardSize)
-                .doubleShadow()
+        return VStack(spacing: 0) {
+            ForEach(0..<3, id: \.self) { row in
+                HStack(spacing: 0) {
+                    ForEach(0..<3, id: \.self) { col in
+                        ZStack {
+                            // Celda con fondo blanco y borde
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.white)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(gridBorderColor, lineWidth: 1.5)
+                                )
 
-            // Grid Lines (non-interactive)
-            ZStack {
-                // Líneas verticales
-                HStack {
-                    Spacer()
-                        .frame(width: cellSize + 5)
-
-                    RoundedRectangle(cornerRadius: 2.5)
-                        .fill(lineGradient)
-                        .frame(width: 5, height: lineLength)
-
-                    Spacer()
-                        .frame(width: cellSize)
-
-                    RoundedRectangle(cornerRadius: 2.5)
-                        .fill(lineGradient)
-                        .frame(width: 5, height: lineLength)
-
-                    Spacer()
-                        .frame(width: cellSize + 5)
-                }
-
-                // Líneas horizontales
-                VStack {
-                    Spacer()
-                        .frame(height: cellSize + 5)
-
-                    RoundedRectangle(cornerRadius: 2.5)
-                        .fill(lineGradient)
-                        .frame(width: lineLength, height: 5)
-
-                    Spacer()
-                        .frame(height: cellSize)
-
-                    RoundedRectangle(cornerRadius: 2.5)
-                        .fill(lineGradient)
-                        .frame(width: lineLength, height: 5)
-
-                    Spacer()
-                        .frame(height: cellSize + 5)
-                }
-            }
-            .allowsHitTesting(false)
-
-            // Game Cells (interactive buttons - MUST be last/on top)
-            VStack(spacing: 0) {
-                ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: 0) {
-                        ForEach(0..<3, id: \.self) { col in
+                            // Contenido de la celda (emoji del jugador)
                             GameCell(
                                 emoji: gameLogic.getCellEmoji(row: row, col: col),
                                 gameMode: gameLogic.gameMode,
@@ -285,28 +282,26 @@ struct GameView: View {
                                 gameLogic.makeMove(row: row, col: col)
                             }
                         }
+                        .frame(width: cellSize, height: cellSize)
                     }
                 }
             }
-            .frame(width: boardSize, height: boardSize)
-            .allowsHitTesting(true)
         }
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.95))
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+        )
     }
 
-    private var lineGradient: LinearGradient {
+    private var gridBorderColor: Color {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return LinearGradient(
-                gradient: Gradient(colors: [Color.pink, Color.purple, Color.orange]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            return Color.pink.opacity(0.6)
         case .unbeatableMode:
-            return LinearGradient(
-                gradient: Gradient(colors: [Color.black, Color.gray.opacity(0.8)]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            return Color.gray.opacity(0.8)
+        case .infinityLevel:
+            return Color.purple.opacity(0.6)
         }
     }
 
@@ -341,6 +336,8 @@ struct GameView: View {
             return "💓"
         case .unbeatableMode:
             return "🔄"
+        case .infinityLevel:
+            return "∞"
         }
     }
 
@@ -350,6 +347,8 @@ struct GameView: View {
             return "Nueva Partida"
         case .unbeatableMode:
             return "New Game"
+        case .infinityLevel:
+            return "Nueva Partida ∞"
         }
     }
 
@@ -359,6 +358,8 @@ struct GameView: View {
             return LinearGradient.lunaModeButton
         case .unbeatableMode:
             return LinearGradient.unbeatableModeButton
+        case .infinityLevel:
+            return LinearGradient(colors: [Color.purple, Color.indigo], startPoint: .leading, endPoint: .trailing)
         }
     }
 
@@ -491,7 +492,7 @@ struct GameCell: View {
                 .font(.system(size: cellSize * 0.4))
                 .fontWeight(.bold)
                 .foregroundColor(symbolColor)
-                .frame(width: cellSize, height: cellSize)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
                 .scaleEffect(isPressed ? 0.95 : 1.0)
                 .animation(.easeInOut(duration: 0.3), value: isPressed)

@@ -1,0 +1,343 @@
+import SwiftUI
+
+struct ThreeInOneView: View {
+    @ObservedObject var gameLogic: InfinityGameLogic
+    @StateObject private var threeInOneLogic = ThreeInOneLogic()
+    @State private var showGameOverAlert = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Background
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.orange.opacity(0.8),
+                        Color.red.opacity(0.6)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    // Header
+                    headerSection
+
+                    // Game Stats
+                    gameStatsSection
+
+                    // Instructions
+                    if !threeInOneLogic.gameRunning {
+                        instructionsSection
+                    }
+
+                    // Game Board
+                    gameBoardView(geometry: geometry)
+
+                    // Controls
+                    controlsSection
+
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .onAppear {
+            threeInOneLogic.stopGame()
+        }
+        .onChange(of: threeInOneLogic.timeRemaining) { _, newValue in
+            if newValue == 0 && threeInOneLogic.gameRunning {
+                threeInOneLogic.stopGame()
+                showGameOverAlert = true
+            }
+        }
+        .alert("¡Tiempo Agotado!", isPresented: $showGameOverAlert) {
+            Button("Volver al Menú") {
+                gameLogic.gameCompleted(won: threeInOneLogic.score > 0, finalScore: threeInOneLogic.score)
+                gameLogic.backToMenu()
+            }
+            Button("Jugar de Nuevo") {
+                threeInOneLogic.startGame()
+            }
+        } message: {
+            Text("Puntuación Final: \(threeInOneLogic.score)")
+        }
+    }
+
+    // MARK: - Header Section
+    private var headerSection: some View {
+        HStack {
+            Button(action: {
+                threeInOneLogic.stopGame()
+                gameLogic.backToMenu()
+            }) {
+                HStack {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Volver")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 15)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.white.opacity(0.2))
+                )
+            }
+            .buttonAnimation()
+
+            Spacer()
+
+            VStack(alignment: .trailing) {
+                Text("Tres en Uno")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+
+                Text("⚡ Velocidad ⚡")
+                    .font(.caption)
+                    .foregroundColor(.yellow)
+            }
+        }
+    }
+
+    // MARK: - Game Stats Section
+    private var gameStatsSection: some View {
+        HStack(spacing: 30) {
+            // Timer
+            VStack {
+                Text("Tiempo")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+
+                Text("\(threeInOneLogic.timeRemaining)")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(timeColor)
+                    .monospacedDigit()
+            }
+            .padding(15)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.white.opacity(0.2))
+            )
+
+            Spacer()
+
+            // Current Target
+            VStack {
+                Text("Objetivo")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+
+                HStack {
+                    Text("\(threeInOneLogic.currentTarget)")
+                        .font(.title)
+                        .fontWeight(.bold)
+                    Text("en línea")
+                        .font(.caption)
+                }
+                .foregroundColor(.white)
+            }
+            .padding(15)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.purple.opacity(0.6))
+            )
+
+            Spacer()
+
+            // Score
+            VStack {
+                Text("Puntuación")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+
+                Text("\(threeInOneLogic.score)")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .foregroundColor(.yellow)
+                    .monospacedDigit()
+            }
+            .padding(15)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.white.opacity(0.2))
+            )
+        }
+    }
+
+    // MARK: - Instructions Section
+    private var instructionsSection: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Text("⭐")
+                    .font(.title2)
+                Text("Consigue \(threeInOneLogic.currentTarget) estrellas en línea")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Text("⭐")
+                    .font(.title2)
+            }
+            .foregroundColor(.white)
+
+            Text("Horizontal, vertical o diagonal • Más líneas = más puntos")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.8))
+                .multilineTextAlignment(.center)
+        }
+        .padding(15)
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color.white.opacity(0.1))
+        )
+    }
+
+    // MARK: - Game Board View
+    private func gameBoardView(geometry: GeometryProxy) -> some View {
+        let boardSize = min(geometry.size.width - 40, geometry.size.height * 0.4)
+        let cellSize = (boardSize - 8) / 3 // 3x3 grid with spacing
+
+        return LazyVGrid(columns: Array(repeating: GridItem(.fixed(cellSize), spacing: 4), count: 3), spacing: 4) {
+            ForEach(0..<3, id: \.self) { row in
+                ForEach(0..<3, id: \.self) { col in
+                    ThreeInOneCellView(
+                        content: threeInOneLogic.board[row][col],
+                        size: cellSize,
+                        isGameRunning: threeInOneLogic.gameRunning
+                    ) {
+                        threeInOneLogic.makeMove(row: row, col: col)
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.9))
+        )
+        .doubleShadow()
+    }
+
+    // MARK: - Controls Section
+    private var controlsSection: some View {
+        HStack(spacing: 20) {
+            if !threeInOneLogic.gameRunning {
+                Button(action: {
+                    threeInOneLogic.startGame()
+                }) {
+                    HStack {
+                        Image(systemName: "play.fill")
+                        Text("Iniciar Juego")
+                    }
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(LinearGradient(
+                                gradient: Gradient(colors: [Color.green, Color.blue]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ))
+                    )
+                }
+                .doubleShadow()
+            } else {
+                Button(action: {
+                    threeInOneLogic.stopGame()
+                    showGameOverAlert = true
+                }) {
+                    HStack {
+                        Image(systemName: "stop.fill")
+                        Text("Detener")
+                    }
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.red.opacity(0.8))
+                    )
+                }
+            }
+        }
+    }
+
+    // MARK: - Computed Properties
+    private var timeColor: Color {
+        switch threeInOneLogic.timeRemaining {
+        case 0...5: return .red
+        case 6...10: return .orange
+        case 11...15: return .yellow
+        default: return .green
+        }
+    }
+}
+
+// MARK: - Three In One Cell View Component
+struct ThreeInOneCellView: View {
+    let content: String
+    let size: CGFloat
+    let isGameRunning: Bool
+    let action: () -> Void
+
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: {
+            if isGameRunning && content.isEmpty {
+                triggerHaptic()
+                action()
+            }
+        }) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(cellBackground)
+                    .frame(width: size, height: size)
+
+                if !content.isEmpty {
+                    Text(content)
+                        .font(.system(size: size * 0.5))
+                        .foregroundColor(.white)
+                        .scaleEffect(isPressed ? 1.2 : 1.0)
+                }
+            }
+        }
+        .disabled(!isGameRunning || !content.isEmpty)
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: content)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
+    }
+
+    private var cellBackground: Color {
+        if content.isEmpty {
+            return isGameRunning ? Color.blue.opacity(0.3) : Color.gray.opacity(0.3)
+        } else {
+            return Color.orange.opacity(0.8)
+        }
+    }
+
+    private func triggerHaptic() {
+        #if canImport(UIKit)
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+        impactFeedback.impactOccurred()
+        #endif
+    }
+}
+
+// MARK: - Preview
+#Preview {
+    ThreeInOneView(gameLogic: InfinityGameLogic())
+}

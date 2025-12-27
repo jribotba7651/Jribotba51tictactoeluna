@@ -34,6 +34,9 @@ struct SettingsView: View {
                         // Configuración del juego
                         GameConfigurationSection()
 
+                        // Compras In-App
+                        PurchaseSection()
+
                         Spacer(minLength: 30)
                     }
                     .padding(.horizontal, 20)
@@ -262,6 +265,139 @@ struct GameConfigurationSection: View {
             )
             .roundedBorder(color: Color.gray.opacity(0.3))
             .cardShadow()
+        }
+    }
+}
+
+// MARK: - Purchase Section
+struct PurchaseSection: View {
+    @ObservedObject private var purchaseManager = PurchaseManager.shared
+    @State private var showingAlert = false
+    @State private var alertTitle = ""
+    @State private var alertMessage = ""
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("💰 Compras")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.playerTitlePurple)
+
+            if purchaseManager.hasRemovedAds {
+                // Usuario ya compró la remoción de anuncios
+                VStack(spacing: 15) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.title2)
+                        Text("Anuncios Removidos")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+
+                    Text("¡Gracias por tu compra! Disfruta del juego sin anuncios.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    Button("Restaurar Compras") {
+                        purchaseManager.restorePurchases()
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
+                    .disabled(purchaseManager.isLoading)
+                }
+            } else {
+                // Usuario no ha comprado la remoción de anuncios
+                VStack(spacing: 15) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("🚫 Remover Anuncios")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                            Text("Disfruta del juego sin interrupciones")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+
+                        if let product = purchaseManager.getRemoveAdsProduct() {
+                            Text(product.localizedPrice ?? "$1.99")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.green)
+                        } else {
+                            Text("$1.99")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.green)
+                        }
+                    }
+
+                    HStack(spacing: 15) {
+                        Button("Comprar") {
+                            purchaseManager.purchaseRemoveAds()
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.green, Color.mint]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(10)
+                        .disabled(purchaseManager.isLoading)
+
+                        Button("Restaurar") {
+                            purchaseManager.restorePurchases()
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(10)
+                        .disabled(purchaseManager.isLoading)
+                    }
+
+                    if purchaseManager.isLoading {
+                        HStack {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                            Text("Procesando...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .fill(Color.white.opacity(0.8))
+        )
+        .roundedBorder(color: Color.purple.opacity(0.3))
+        .cardShadow()
+        .alert(alertTitle, isPresented: $showingAlert) {
+            Button("OK") { }
+        } message: {
+            Text(alertMessage)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .init("PurchaseCompleted"))) { _ in
+            alertTitle = "¡Compra Exitosa!"
+            alertMessage = "Los anuncios han sido removidos. ¡Gracias por tu compra!"
+            showingAlert = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .init("PurchaseFailed"))) { notification in
+            alertTitle = "Error en la Compra"
+            alertMessage = notification.object as? String ?? "Hubo un problema con la compra. Inténtalo de nuevo."
+            showingAlert = true
         }
     }
 }

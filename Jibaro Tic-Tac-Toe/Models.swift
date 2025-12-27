@@ -5,11 +5,13 @@ import SwiftUI
 enum GameMode: CaseIterable {
     case lunaMode
     case unbeatableMode
+    case infinityLevel
 
     var title: String {
         switch self {
         case .lunaMode: return "Luna Mode"
         case .unbeatableMode: return "Unbeatable Mode"
+        case .infinityLevel: return "Infinity Level"
         }
     }
 
@@ -17,6 +19,7 @@ enum GameMode: CaseIterable {
         switch self {
         case .lunaMode: return "Tú y Luna vs la diversión"
         case .unbeatableMode: return "Desafía a la IA imposible"
+        case .infinityLevel: return "Modo infinito con Papá ⭐"
         }
     }
 
@@ -24,6 +27,7 @@ enum GameMode: CaseIterable {
         switch self {
         case .lunaMode: return "🌙"
         case .unbeatableMode: return "🤖"
+        case .infinityLevel: return "∞"
         }
     }
 
@@ -33,6 +37,8 @@ enum GameMode: CaseIterable {
             return ["Luna 🌙 vs Papá ⭐", "Efectos mágicos ✨", "Mensajes en español 💕"]
         case .unbeatableMode:
             return ["IA imbatible", "Algoritmo Minimax", "¡Atrévete a intentarlo!"]
+        case .infinityLevel:
+            return ["Modo infinito", "Papá ⭐ especial", "Próximamente..."]
         }
     }
 
@@ -42,6 +48,8 @@ enum GameMode: CaseIterable {
             return [Color.pink.opacity(0.8), Color.orange.opacity(0.6)]
         case .unbeatableMode:
             return [Color.blue.opacity(0.8), Color.purple.opacity(0.6)]
+        case .infinityLevel:
+            return [Color.purple.opacity(0.8), Color.indigo.opacity(0.6)]
         }
     }
 }

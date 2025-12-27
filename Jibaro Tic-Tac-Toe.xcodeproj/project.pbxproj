@@ -8,6 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		2F6CD2E22EEE15E70044BC80 /* ConfettiView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CD2E12EEE15E70044BC80 /* ConfettiView.swift */; };
+		2F6CD2F52EEF9C8F0044BC80 /* FIXES_APLICADOS.md in Resources */ = {isa = PBXBuildFile; fileRef = 2F6CD2EF2EEF9C8F0044BC80 /* FIXES_APLICADOS.md */; };
+		2F6CD2FB2EEF9DFF0044BC80 /* ThreeInOneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CD2F42EEF9C8F0044BC80 /* ThreeInOneView.swift */; };
+		2F6CD2FC2EEF9DFF0044BC80 /* InfinityPapaModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CD2F32EEF9C8F0044BC80 /* InfinityPapaModeView.swift */; };
+		2F6CD2FD2EEF9DFF0044BC80 /* InfinityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CD2F22EEF9C8F0044BC80 /* InfinityModels.swift */; };
+		2F6CD2FE2EEF9DFF0044BC80 /* InfiniteTicTacToeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CD2F02EEF9C8F0044BC80 /* InfiniteTicTacToeView.swift */; };
+		2F6CD2FF2EEF9DFF0044BC80 /* InfinityGameLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F6CD2F12EEF9C8F0044BC80 /* InfinityGameLogic.swift */; };
+		2FACC8F22EF8D1100085B77B /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 2FACC8F12EF8D1100085B77B /* GoogleMobileAds */; };
 		3D0E1A2B2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E1A2A2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift */; };
 		3D0E1A2D2B5F1A1000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E1A2C2B5F1A1000000001 /* ContentView.swift */; };
 		3D0E1A2F2B5F1A1200000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3D0E1A2E2B5F1A1200000001 /* Assets.xcassets */; };
@@ -23,6 +30,12 @@
 
 /* Begin PBXFileReference section */
 		2F6CD2E12EEE15E70044BC80 /* ConfettiView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiView.swift; sourceTree = "<group>"; };
+		2F6CD2EF2EEF9C8F0044BC80 /* FIXES_APLICADOS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FIXES_APLICADOS.md; sourceTree = "<group>"; };
+		2F6CD2F02EEF9C8F0044BC80 /* InfiniteTicTacToeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfiniteTicTacToeView.swift; sourceTree = "<group>"; };
+		2F6CD2F12EEF9C8F0044BC80 /* InfinityGameLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfinityGameLogic.swift; sourceTree = "<group>"; };
+		2F6CD2F22EEF9C8F0044BC80 /* InfinityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfinityModels.swift; sourceTree = "<group>"; };
+		2F6CD2F32EEF9C8F0044BC80 /* InfinityPapaModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfinityPapaModeView.swift; sourceTree = "<group>"; };
+		2F6CD2F42EEF9C8F0044BC80 /* ThreeInOneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeInOneView.swift; sourceTree = "<group>"; };
 		3D0E1A272B5F1A1000000001 /* Jibaro Tic-Tac-Toe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Jibaro Tic-Tac-Toe.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D0E1A2A2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Jibaro_Tic_Tac_ToeApp.swift; sourceTree = "<group>"; };
 		3D0E1A2C2B5F1A1000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -42,6 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2FACC8F22EF8D1100085B77B /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,6 +87,12 @@
 				3D0E1A3A2B5F1A3500000001 /* GameView.swift */,
 				3D0E1A3C2B5F1A3A00000001 /* SettingsView.swift */,
 				3D0E1A3E2B5F1A4000000001 /* GameLogic.swift */,
+				2F6CD2EF2EEF9C8F0044BC80 /* FIXES_APLICADOS.md */,
+				2F6CD2F02EEF9C8F0044BC80 /* InfiniteTicTacToeView.swift */,
+				2F6CD2F12EEF9C8F0044BC80 /* InfinityGameLogic.swift */,
+				2F6CD2F22EEF9C8F0044BC80 /* InfinityModels.swift */,
+				2F6CD2F32EEF9C8F0044BC80 /* InfinityPapaModeView.swift */,
+				2F6CD2F42EEF9C8F0044BC80 /* ThreeInOneView.swift */,
 				2F6CD2E12EEE15E70044BC80 /* ConfettiView.swift */,
 				3D0E1A402B5F1A4500000001 /* DataManager.swift */,
 				3D0E1A422B5F1A4A00000001 /* Models.swift */,
@@ -135,6 +155,9 @@
 				Base,
 			);
 			mainGroup = 3D0E1A1E2B5F1A1000000001;
+			packageReferences = (
+				2FACC8F02EF8D1100085B77B /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			productRefGroup = 3D0E1A282B5F1A1000000001 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -150,6 +173,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D0E1A322B5F1A1200000001 /* Preview Assets.xcassets in Resources */,
+				2F6CD2F52EEF9C8F0044BC80 /* FIXES_APLICADOS.md in Resources */,
 				3D0E1A2F2B5F1A1200000001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -164,6 +188,11 @@
 				3D0E1A2D2B5F1A1000000001 /* ContentView.swift in Sources */,
 				3D0E1A432B5F1A4A00000001 /* Models.swift in Sources */,
 				3D0E1A3F2B5F1A4000000001 /* GameLogic.swift in Sources */,
+				2F6CD2FB2EEF9DFF0044BC80 /* ThreeInOneView.swift in Sources */,
+				2F6CD2FC2EEF9DFF0044BC80 /* InfinityPapaModeView.swift in Sources */,
+				2F6CD2FD2EEF9DFF0044BC80 /* InfinityModels.swift in Sources */,
+				2F6CD2FE2EEF9DFF0044BC80 /* InfiniteTicTacToeView.swift in Sources */,
+				2F6CD2FF2EEF9DFF0044BC80 /* InfinityGameLogic.swift in Sources */,
 				3D0E1A452B5F1A5000000001 /* Extensions.swift in Sources */,
 				3D0E1A3B2B5F1A3500000001 /* GameView.swift in Sources */,
 				3D0E1A412B5F1A4500000001 /* DataManager.swift in Sources */,
@@ -309,7 +338,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Jibaro Tic-Tac-Toe/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Jibaro Tic-Tac-Toe/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -337,7 +367,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Jibaro Tic-Tac-Toe/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Jibaro Tic-Tac-Toe/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -378,6 +409,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2FACC8F02EF8D1100085B77B /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.14.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2FACC8F12EF8D1100085B77B /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2FACC8F02EF8D1100085B77B /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3D0E1A1F2B5F1A1000000001 /* Project object */;
 }

@@ -17,6 +17,9 @@ struct MenuView: View {
                         // Header con título y configuración
                         headerSection
 
+                        // Banner de anuncio
+                        menuAdSection
+
                         // Tarjetas de modos de juego
                         gameModesSection
 
@@ -27,8 +30,11 @@ struct MenuView: View {
             }
         }
         .navigationBarHidden(true)
-        .fullScreenCover(isPresented: .constant(gameLogic.gameState == .playing)) {
+        .fullScreenCover(isPresented: .constant(gameLogic.gameState == .playing && gameLogic.gameMode != .infinityLevel)) {
             GameView(gameLogic: gameLogic)
+        }
+        .fullScreenCover(isPresented: .constant(gameLogic.gameState == .playing && gameLogic.gameMode == .infinityLevel)) {
+            InfinityPapaModeView(mainGameLogic: gameLogic)
         }
         .fullScreenCover(isPresented: .constant(gameLogic.gameState == .settings)) {
             SettingsView(gameLogic: gameLogic)
@@ -74,12 +80,47 @@ struct MenuView: View {
         }
     }
 
+    // MARK: - Menu Ad Section
+    private var menuAdSection: some View {
+        Group {
+            if !PurchaseManager.shared.hasRemovedAds {
+                ZStack {
+                    // Placeholder background
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(Color.white.opacity(0.2))
+                        .frame(height: 60)
+
+                    Text(" ")
+                        .font(.caption2)
+                        .foregroundColor(.clear)
+                        .onAppear {
+                            print("🔍 Menu banner placeholder appeared")
+                        }
+
+                    // Banner ad on top
+                    AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Real Banner ID
+                        .frame(height: 60)
+                }
+                .frame(height: 60)
+                .cornerRadius(15)
+            } else {
+                // Espacio mínimo cuando los anuncios están removidos
+                Color.clear.frame(height: 8)
+            }
+        }
+    }
+
     // MARK: - Game Modes Section
     private var gameModesSection: some View {
         VStack(spacing: 20) {
             ForEach(GameMode.allCases, id: \.self) { mode in
                 GameModeCard(mode: mode) {
-                    gameLogic.startNewGame(mode: mode)
+                    if mode == .infinityLevel {
+                        gameLogic.gameMode = .infinityLevel
+                        gameLogic.gameState = .playing
+                    } else {
+                        gameLogic.startNewGame(mode: mode)
+                    }
                 }
             }
         }
@@ -157,9 +198,12 @@ struct GameModeCard: View {
             return LinearGradient.menuCardLuna
         case .unbeatableMode:
             return LinearGradient.menuCardUnbeatable
+        case .infinityLevel:
+            return LinearGradient.menuCardInfinity
         }
     }
 }
+
 
 // MARK: - Preview
 #Preview {

@@ -127,6 +127,15 @@ extension LinearGradient {
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
+
+    static let menuCardInfinity = LinearGradient(
+        gradient: Gradient(colors: [
+            Color.purple.opacity(0.7),
+            Color.indigo.opacity(0.5)
+        ]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 }
 
 // MARK: - Extensión de View para modificadores personalizados

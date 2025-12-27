@@ -238,6 +238,15 @@ class GameLogic: ObservableObject {
                 case .none:
                     gameMessage = "It's a draw! Well played 🤝"
                 }
+            case .infinityLevel:
+                switch winner {
+                case .player1:
+                    gameMessage = "¡Infinito logrado! ∞✨"
+                case .player2:
+                    gameMessage = "¡Papá ⭐ alcanza lo infinito! ∞"
+                case .none:
+                    gameMessage = "¡Empate infinito! ∞🏆"
+                }
             }
         } else {
             switch gameMode {
@@ -250,6 +259,9 @@ class GameLogic: ObservableObject {
                 } else {
                     gameMessage = "AI is thinking... 🤖"
                 }
+            case .infinityLevel:
+                let playerName = dataManager.getPlayerName(for: currentPlayer)
+                gameMessage = "Turno infinito de \(playerName) ∞"
             }
         }
     }
