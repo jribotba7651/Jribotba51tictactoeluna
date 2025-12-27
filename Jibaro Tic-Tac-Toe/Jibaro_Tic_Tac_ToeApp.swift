@@ -134,6 +134,161 @@ extension SKProduct {
     }
 }
 
+// InterstitialAdManager para anuncios intersticiales
+class InterstitialAdManager: NSObject, ObservableObject, GADFullScreenContentDelegate {
+    @Published var isLoading = false
+    @Published var isReady = false
+
+    private var interstitialAd: GADInterstitialAd?
+    private let adUnitID = "ca-app-pub-3940256099942544/4411468910" // Test Interstitial ID
+    private let purchaseManager = PurchaseManager.shared
+    private let gameFrequency = 10 // Mostrar anuncio cada 10 juegos
+
+    override init() {
+        super.init()
+        loadInterstitialAd()
+    }
+
+    func loadInterstitialAd() {
+        // No cargar anuncios si el usuario los removió
+        if purchaseManager.hasRemovedAds {
+            print("🚫 Ads removed by purchase - not loading interstitial")
+            return
+        }
+
+        isLoading = true
+        isReady = false
+
+        let request = GADRequest()
+
+        GADInterstitialAd.load(withAdUnitID: adUnitID, request: request) { [weak self] ad, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+
+                if let error = error {
+                    print("❌ Failed to load interstitial ad: \(error.localizedDescription)")
+                    return
+                }
+
+                self?.interstitialAd = ad
+                self?.interstitialAd?.fullScreenContentDelegate = self
+                self?.isReady = true
+                print("✅ Interstitial ad loaded successfully")
+            }
+        }
+    }
+
+    func presentInterstitialAd() {
+        // No mostrar anuncios si el usuario los removió
+        if purchaseManager.hasRemovedAds {
+            print("🚫 Ads removed by purchase - not showing interstitial")
+            return
+        }
+
+        guard let interstitialAd = interstitialAd else {
+            print("❌ Interstitial ad not ready")
+            loadInterstitialAd() // Try to load again
+            return
+        }
+
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            print("❌ Could not find root view controller")
+            return
+        }
+
+        interstitialAd.present(fromRootViewController: rootViewController)
+        print("🎬 Presenting interstitial ad")
+    }
+
+    func shouldShowAdAfterGames(_ gamesCount: Int) -> Bool {
+        return !purchaseManager.hasRemovedAds && gamesCount % gameFrequency == 0
+    }
+
+    // MARK: - GADFullScreenContentDelegate
+
+    func adDidRecordImpression(_ ad: GADFullScreenPresentingAd) {
+        print("🎯 Interstitial ad recorded impression")
+    }
+
+    func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWith error: Error) {
+        print("❌ Interstitial ad failed to present: \(error.localizedDescription)")
+        loadInterstitialAd() // Try to load a new ad
+    }
+
+    func adWillPresentFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+        print("🎬 Interstitial ad will present")
+    }
+
+    func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+        print("👋 Interstitial ad dismissed")
+        loadInterstitialAd() // Load a new ad for next time
+    }
+}
+
+// AdMobBannerView para anuncios banner
+struct AdMobBannerView: UIViewRepresentable {
+    let adUnitID: String
+    @ObservedObject private var purchaseManager = PurchaseManager.shared
+
+    func makeUIView(context: Context) -> UIView {
+        // Si el usuario compró la remoción de anuncios, mostrar vista vacía
+        if purchaseManager.hasRemovedAds {
+            let emptyView = UIView()
+            emptyView.backgroundColor = UIColor.clear
+            return emptyView
+        }
+
+        let bannerView = GADBannerView(adSize: GADAdSizeBanner)
+        bannerView.adUnitID = adUnitID
+        bannerView.rootViewController = getRootViewController()
+
+        let request = GADRequest()
+        bannerView.load(request)
+
+        print("🎯 AdMob Banner loading with ID: \(adUnitID)")
+
+        return bannerView
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // Si el estado de compra cambió, recrear la vista
+        if purchaseManager.hasRemovedAds && uiView is GADBannerView {
+            // Reemplazar con vista vacía
+            if let containerView = uiView.superview {
+                let emptyView = UIView()
+                emptyView.backgroundColor = UIColor.clear
+                emptyView.frame = uiView.frame
+                containerView.addSubview(emptyView)
+                uiView.removeFromSuperview()
+            }
+        }
+    }
+
+    private func getRootViewController() -> UIViewController? {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first else {
+            return nil
+        }
+        return window.rootViewController
+    }
+}
+
+// AppDelegate para inicializar AdMob
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+
+        // Inicializar Google Mobile Ads SDK
+        GADMobileAds.sharedInstance().start(completionHandler: { status in
+            print("🎯 Google Mobile Ads SDK initialized successfully")
+            print("🎯 AdMob adapters status: \(status)")
+        })
+
+        print("🍃 AppDelegate initialized successfully")
+        return true
+    }
+}
 
 @main
 struct Jibaro_Tic_Tac_ToeApp: App {
