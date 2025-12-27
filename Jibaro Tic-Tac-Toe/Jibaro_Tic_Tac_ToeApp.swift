@@ -135,11 +135,11 @@ extension SKProduct {
 }
 
 // InterstitialAdManager para anuncios intersticiales
-class InterstitialAdManager: NSObject, ObservableObject, GADFullScreenContentDelegate {
+class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelegate {
     @Published var isLoading = false
     @Published var isReady = false
 
-    private var interstitialAd: GADInterstitialAd?
+    private var interstitialAd: InterstitialAd?
     private let adUnitID = "ca-app-pub-3940256099942544/4411468910" // Test Interstitial ID
     private let purchaseManager = PurchaseManager.shared
     private let gameFrequency = 10 // Mostrar anuncio cada 10 juegos
@@ -159,9 +159,9 @@ class InterstitialAdManager: NSObject, ObservableObject, GADFullScreenContentDel
         isLoading = true
         isReady = false
 
-        let request = GADRequest()
+        let request = Request()
 
-        GADInterstitialAd.load(withAdUnitID: adUnitID, request: request) { [weak self] ad, error in
+        InterstitialAd.load(withAdUnitID: adUnitID, request: request) { [weak self] ad, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
 
@@ -205,22 +205,22 @@ class InterstitialAdManager: NSObject, ObservableObject, GADFullScreenContentDel
         return !purchaseManager.hasRemovedAds && gamesCount % gameFrequency == 0
     }
 
-    // MARK: - GADFullScreenContentDelegate
+    // MARK: - FullScreenContentDelegate
 
-    func adDidRecordImpression(_ ad: GADFullScreenPresentingAd) {
+    func adDidRecordImpression(_ ad: FullScreenPresentingAd) {
         print("🎯 Interstitial ad recorded impression")
     }
 
-    func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWith error: Error) {
+    func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
         print("❌ Interstitial ad failed to present: \(error.localizedDescription)")
         loadInterstitialAd() // Try to load a new ad
     }
 
-    func adWillPresentFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+    func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
         print("🎬 Interstitial ad will present")
     }
 
-    func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+    func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
         print("👋 Interstitial ad dismissed")
         loadInterstitialAd() // Load a new ad for next time
     }
@@ -239,11 +239,11 @@ struct AdMobBannerView: UIViewRepresentable {
             return emptyView
         }
 
-        let bannerView = GADBannerView(adSize: GADAdSizeBanner)
+        let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitID
         bannerView.rootViewController = getRootViewController()
 
-        let request = GADRequest()
+        let request = Request()
         bannerView.load(request)
 
         print("🎯 AdMob Banner loading with ID: \(adUnitID)")
@@ -253,7 +253,7 @@ struct AdMobBannerView: UIViewRepresentable {
 
     func updateUIView(_ uiView: UIView, context: Context) {
         // Si el estado de compra cambió, recrear la vista
-        if purchaseManager.hasRemovedAds && uiView is GADBannerView {
+        if purchaseManager.hasRemovedAds && uiView is BannerView {
             // Reemplazar con vista vacía
             if let containerView = uiView.superview {
                 let emptyView = UIView()
@@ -280,7 +280,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
 
         // Inicializar Google Mobile Ads SDK
-        GADMobileAds.sharedInstance().start(completionHandler: { status in
+        MobileAds.sharedInstance().start(completionHandler: { status in
             print("🎯 Google Mobile Ads SDK initialized successfully")
             print("🎯 AdMob adapters status: \(status)")
         })
