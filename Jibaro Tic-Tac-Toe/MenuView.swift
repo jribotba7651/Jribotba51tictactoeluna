@@ -98,7 +98,7 @@ struct MenuView: View {
                         }
 
                     // Banner ad on top
-                    AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Real Banner ID
+                    AdMobBannerView(adUnitID: "ca-app-pub-3940256099942544/2934735716") // Test Banner ID
                         .frame(height: 60)
                 }
                 .frame(height: 60)

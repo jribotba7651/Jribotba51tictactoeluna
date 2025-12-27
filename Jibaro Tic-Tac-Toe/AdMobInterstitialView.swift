@@ -1,11 +1,15 @@
 import SwiftUI
-// import GoogleMobileAds // Descomentar después de agregar la dependencia
+import GoogleMobileAds
 import UIKit
 
-class InterstitialAdManager: NSObject, ObservableObject {
+class InterstitialAdManager: NSObject, ObservableObject, GADFullScreenContentDelegate {
     @Published var isLoading = false
+    @Published var isReady = false
 
-    private let adUnitID = "ca-app-pub-3258994800717071/8816859712"
+    private var interstitialAd: GADInterstitialAd?
+    private let adUnitID = "ca-app-pub-3940256099942544/4411468910" // Test Interstitial ID
+    private let purchaseManager = PurchaseManager.shared
+    private let gameFrequency = 10 // Mostrar anuncio cada 10 juegos
 
     override init() {
         super.init()
@@ -13,38 +17,78 @@ class InterstitialAdManager: NSObject, ObservableObject {
     }
 
     func loadInterstitialAd() {
-        isLoading = true
-        print("🔄 Loading interstitial ad (placeholder): \(adUnitID)")
+        // No cargar anuncios si el usuario los removió
+        if purchaseManager.hasRemovedAds {
+            print("🚫 Ads removed by purchase - not loading interstitial")
+            return
+        }
 
-        // Simular carga de anuncio
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.isLoading = false
-            print("✅ Interstitial ad loaded (placeholder)")
+        isLoading = true
+        isReady = false
+
+        let request = GADRequest()
+
+        GADInterstitialAd.load(withAdUnitID: adUnitID, request: request) { [weak self] ad, error in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+
+                if let error = error {
+                    print("❌ Failed to load interstitial ad: \(error.localizedDescription)")
+                    return
+                }
+
+                self?.interstitialAd = ad
+                self?.interstitialAd?.fullScreenContentDelegate = self
+                self?.isReady = true
+                print("✅ Interstitial ad loaded successfully")
+            }
         }
     }
 
     func presentInterstitialAd() {
-        print("🎬 Would show interstitial ad here: \(adUnitID)")
+        // No mostrar anuncios si el usuario los removió
+        if purchaseManager.hasRemovedAds {
+            print("🚫 Ads removed by purchase - not showing interstitial")
+            return
+        }
 
-        // Placeholder: mostrar una alerta
+        guard let interstitialAd = interstitialAd else {
+            print("❌ Interstitial ad not ready")
+            loadInterstitialAd() // Try to load again
+            return
+        }
+
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootViewController = windowScene.windows.first?.rootViewController else {
             print("❌ Could not find root view controller")
             return
         }
 
-        let alert = UIAlertController(
-            title: "Anuncio Intersticial",
-            message: "Aquí aparecería un anuncio de AdMob\nID: \(adUnitID)",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Cerrar", style: .default))
+        interstitialAd.present(fromRootViewController: rootViewController)
+        print("🎬 Presenting interstitial ad")
+    }
 
-        rootViewController.present(alert, animated: true) {
-            // Simular recarga del anuncio
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.loadInterstitialAd()
-            }
-        }
+    func shouldShowAdAfterGames(_ gamesCount: Int) -> Bool {
+        return !purchaseManager.hasRemovedAds && gamesCount % gameFrequency == 0
+    }
+
+    // MARK: - GADFullScreenContentDelegate
+
+    func adDidRecordImpression(_ ad: GADFullScreenPresentingAd) {
+        print("🎯 Interstitial ad recorded impression")
+    }
+
+    func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWith error: Error) {
+        print("❌ Interstitial ad failed to present: \(error.localizedDescription)")
+        loadInterstitialAd() // Try to load a new ad
+    }
+
+    func adWillPresentFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+        print("🎬 Interstitial ad will present")
+    }
+
+    func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+        print("👋 Interstitial ad dismissed")
+        loadInterstitialAd() // Load a new ad for next time
     }
 }

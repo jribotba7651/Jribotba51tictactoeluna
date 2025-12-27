@@ -1,34 +1,51 @@
 import SwiftUI
-// import GoogleMobileAds // Descomentar después de agregar la dependencia
+import GoogleMobileAds
 import UIKit
 
 struct AdMobBannerView: UIViewRepresentable {
     let adUnitID: String
+    @ObservedObject private var purchaseManager = PurchaseManager.shared
 
     func makeUIView(context: Context) -> UIView {
-        // Placeholder temporal hasta que se agregue GoogleMobileAds
-        let placeholderView = UIView()
-        placeholderView.backgroundColor = UIColor.systemGray5
+        // Si el usuario compró la remoción de anuncios, mostrar vista vacía
+        if purchaseManager.hasRemovedAds {
+            let emptyView = UIView()
+            emptyView.backgroundColor = UIColor.clear
+            return emptyView
+        }
 
-        let label = UILabel()
-        label.text = "AdMob Banner\n\(adUnitID)"
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.textColor = UIColor.systemGray
-        label.font = UIFont.systemFont(ofSize: 12)
-        label.translatesAutoresizingMaskIntoConstraints = false
+        let bannerView = GADBannerView(adSize: GADAdSizeBanner)
+        bannerView.adUnitID = adUnitID
+        bannerView.rootViewController = getRootViewController()
 
-        placeholderView.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: placeholderView.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: placeholderView.centerYAnchor)
-        ])
+        let request = GADRequest()
+        bannerView.load(request)
 
-        return placeholderView
+        print("🎯 AdMob Banner loading with ID: \(adUnitID)")
+
+        return bannerView
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        // No necesita actualización
+        // Si el estado de compra cambió, recrear la vista
+        if purchaseManager.hasRemovedAds && uiView is GADBannerView {
+            // Reemplazar con vista vacía
+            if let containerView = uiView.superview {
+                let emptyView = UIView()
+                emptyView.backgroundColor = UIColor.clear
+                emptyView.frame = uiView.frame
+                containerView.addSubview(emptyView)
+                uiView.removeFromSuperview()
+            }
+        }
+    }
+
+    private func getRootViewController() -> UIViewController? {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first else {
+            return nil
+        }
+        return window.rootViewController
     }
 }
 
@@ -48,4 +65,10 @@ struct AdMobBannerView_Previews: PreviewProvider {
         AdMobBannerView(adUnitID: "ca-app-pub-3940256099942544/2934735716") // Test Ad Unit ID
             .frame(height: 50)
     }
+}
+
+// MARK: - Test Ad Unit IDs
+extension AdMobBannerView {
+    static let testBannerID = "ca-app-pub-3940256099942544/2934735716"
+    static let productionBannerID = "ca-app-pub-3258994800717071/5955178067"
 }
