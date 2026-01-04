@@ -140,7 +140,7 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
     @Published var isReady = false
 
     private var interstitialAd: InterstitialAd?
-    private let adUnitID = "ca-app-pub-3940256099942544/4411468910" // Test Interstitial ID
+    private let adUnitID = "ca-app-pub-3258994800717071/8816859712" // Production Interstitial ID
     private let purchaseManager = PurchaseManager.shared
     private let gameFrequency = 10 // Mostrar anuncio cada 10 juegos
 

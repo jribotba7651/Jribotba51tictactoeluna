@@ -187,7 +187,7 @@ struct GameView: View {
                         }
 
                     // Banner ad on top (cuando cargue, cubrirá el placeholder)
-                    AdMobBannerView(adUnitID: "ca-app-pub-3940256099942544/2934735716") // Test Banner ID
+                    AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Production Banner ID
                         .frame(height: 60)
                 }
                 .frame(height: 60)
