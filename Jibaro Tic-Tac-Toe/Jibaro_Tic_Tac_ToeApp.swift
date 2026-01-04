@@ -161,7 +161,7 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
 
         let request = Request()
 
-        InterstitialAd.load(withAdUnitID: adUnitID, request: request) { [weak self] ad, error in
+        InterstitialAd.load(with: adUnitID, request: request) { [weak self] ad, error in
             DispatchQueue.main.async {
                 self?.isLoading = false
 
@@ -197,7 +197,7 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
             return
         }
 
-        interstitialAd.present(fromRootViewController: rootViewController)
+        interstitialAd.present(from: rootViewController)
         print("🎬 Presenting interstitial ad")
     }
 
@@ -280,10 +280,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
 
         // Inicializar Google Mobile Ads SDK
-        MobileAds.sharedInstance().start(completionHandler: { status in
+        MobileAds.shared.start { status in
             print("🎯 Google Mobile Ads SDK initialized successfully")
             print("🎯 AdMob adapters status: \(status)")
-        })
+        }
 
         print("🍃 AppDelegate initialized successfully")
         return true
