@@ -134,8 +134,8 @@ export function HomeScreen({
             className="relative overflow-hidden cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all"
             onClick={() => onSelectMode('infinite')}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600" />
-            <div className="relative p-6 space-y-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 z-0" />
+            <div className="relative p-6 space-y-4 z-10">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">

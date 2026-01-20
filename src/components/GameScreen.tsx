@@ -51,6 +51,11 @@ export function GameScreen({
   const player1Symbol = players[0].emoji;
   const player2Symbol = isUnbeatableMode ? '🤖' : players[1].emoji;
 
+  const player1Name = players[0].name;
+  const player2Name = isUnbeatableMode ? 'IA' : players[1].name;
+  const currentPlayerName = isPlayer1Turn ? player1Name : player2Name;
+  const currentPlayerEmoji = isPlayer1Turn ? player1Symbol : player2Symbol;
+
   useEffect(() => {
     if (!isPlayer1Turn && isUnbeatableMode && !winner && board.some(cell => cell === null)) {
       const timer = setTimeout(() => {
@@ -219,13 +224,24 @@ export function GameScreen({
   };
 
   const finalizeWin = (gameWinner: string) => {
-    if (gameWinner === player1Symbol) {
-      setScores(prev => ({ ...prev, player1: prev.player1 + 1 }));
+    if (gameWinner === player1Symbol || (!isUnbeatableMode && !isInfiniteMode)) {
+      setScores(prev => ({ ...prev, player1: gameWinner === player1Symbol ? prev.player1 + 1 : prev.player1 }));
+      if (gameWinner !== player1Symbol) setScores(prev => ({ ...prev, player2: prev.player2 + 1 }));
+
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-      toast.success(`🎉 ¡${players[0].name} gana!`);
+      const winnerName = gameWinner === player1Symbol ? player1Name : player2Name;
+      toast.success(`🎉 ¡${winnerName} gana!`);
     } else {
+      // AI or Opponent win in Unbeatable/Infinite
       setScores(prev => ({ ...prev, player2: prev.player2 + 1 }));
-      toast.error(isUnbeatableMode ? '🤖 La IA gana' : `🎉 ¡${players[1].name} gana!`);
+      if (isUnbeatableMode || isInfiniteMode) {
+        toast.error(`😆 La IA gana... ¡Sigue intentando!`, {
+          icon: '😆',
+          duration: 5000,
+        });
+      } else {
+        toast.success(`🎉 ¡${player2Name} gana!`);
+      }
     }
   };
 
@@ -328,9 +344,9 @@ export function GameScreen({
 
       {/* Score Cards */}
       <div className="grid grid-cols-3 gap-3">
-        <ScoreCard icon={player1Symbol} label={players[0].name} score={scores.player1} color="red" />
+        <ScoreCard icon={player1Symbol} label={player1Name} score={scores.player1} color="red" />
         <ScoreCard icon="🏆" label="Empates" score={scores.draws} color="orange" />
-        <ScoreCard icon={player2Symbol} label={isUnbeatableMode ? 'IA' : players[1].name} score={scores.player2} color="blue" />
+        <ScoreCard icon={player2Symbol} label={player2Name} score={scores.player2} color="blue" />
       </div>
 
       {/* Info Card */}
@@ -346,7 +362,7 @@ export function GameScreen({
       {!winner && (
         <motion.div key={isPlayer1Turn ? 'p1' : 'p2'} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
           <p className={`text-2xl ${isInfiniteMode ? 'text-emerald-600' : isUnbeatableMode ? 'text-blue-600' : 'text-pink-600'}`}>
-            Turno de {currentPlayer.name} {currentPlayer.emoji}
+            Turno de {currentPlayerName} {currentPlayerEmoji}
           </p>
         </motion.div>
       )}
