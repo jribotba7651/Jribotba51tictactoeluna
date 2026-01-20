@@ -14,9 +14,9 @@ interface HomeScreenProps {
   onToggleLunaStarts: (value: boolean) => void;
 }
 
-export function HomeScreen({ 
-  onSelectMode, 
-  players, 
+export function HomeScreen({
+  onSelectMode,
+  players,
   onUpdatePlayers,
   lunaStartsFirst,
   onToggleLunaStarts
@@ -46,7 +46,7 @@ export function HomeScreen({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Card 
+          <Card
             className="relative overflow-hidden cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all"
             onClick={() => onSelectMode('luna')}
           >
@@ -64,7 +64,7 @@ export function HomeScreen({
                 </div>
                 <ChevronRight className="size-6 text-white mt-2" />
               </div>
-              
+
               <div className="space-y-2 text-white/95">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
@@ -88,7 +88,7 @@ export function HomeScreen({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Card 
+          <Card
             className="relative overflow-hidden cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all"
             onClick={() => onSelectMode('unbeatable')}
           >
@@ -106,7 +106,7 @@ export function HomeScreen({
                 </div>
                 <ChevronRight className="size-6 text-white mt-2" />
               </div>
-              
+
               <div className="space-y-2 text-white/95">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
@@ -119,6 +119,48 @@ export function HomeScreen({
                 <div className="flex items-center gap-2 text-sm">
                   <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
                   <span>¡Atrévete a intentarlo!</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Infinite Mode */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <Card
+            className="relative overflow-hidden cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all"
+            onClick={() => onSelectMode('infinite')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600" />
+            <div className="relative p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-5xl">♾️</span>
+                    <div>
+                      <h2 className="text-white">Infinite Mode</h2>
+                      <p className="text-white/90 text-sm">El tablero crece contigo</p>
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="size-6 text-white mt-2" />
+              </div>
+
+              <div className="space-y-2 text-white/95">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
+                  <span>Tablero dinámico</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
+                  <span>Consigue 5 en línea</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
+                  <span>Sin límites de espacio</span>
                 </div>
               </div>
             </div>
@@ -141,7 +183,7 @@ export function HomeScreen({
               Configuración
             </DialogTitle>
           </DialogHeader>
-          <ConfigurationPanel 
+          <ConfigurationPanel
             players={players}
             onUpdatePlayers={onUpdatePlayers}
             lunaStartsFirst={lunaStartsFirst}

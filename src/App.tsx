@@ -3,7 +3,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { GameScreen } from './components/GameScreen';
 import { Toaster } from './components/ui/sonner';
 
-export type GameMode = 'luna' | 'unbeatable' | null;
+export type GameMode = 'luna' | 'unbeatable' | 'infinite' | null;
 
 export interface Player {
   name: string;
@@ -22,7 +22,7 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         {!gameMode ? (
-          <HomeScreen 
+          <HomeScreen
             onSelectMode={setGameMode}
             players={players}
             onUpdatePlayers={setPlayers}
@@ -30,7 +30,7 @@ export default function App() {
             onToggleLunaStarts={setLunaStartsFirst}
           />
         ) : (
-          <GameScreen 
+          <GameScreen
             mode={gameMode}
             players={players}
             lunaStartsFirst={lunaStartsFirst}
