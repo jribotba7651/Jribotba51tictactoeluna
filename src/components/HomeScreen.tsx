@@ -131,10 +131,12 @@ export function HomeScreen({
           whileTap={{ scale: 0.98 }}
         >
           <Card
-            className="relative overflow-hidden cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all"
+            className="relative overflow-hidden cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all h-[180px]"
             onClick={() => onSelectMode('infinite')}
+            style={{
+              background: 'linear-gradient(to bottom right, #10b981, #14b8a6, #0891b2)',
+            }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 z-0" />
             <div className="relative p-6 space-y-4 z-10">
               <div className="flex items-start justify-between">
                 <div className="space-y-2">
@@ -157,10 +159,6 @@ export function HomeScreen({
                 <div className="flex items-center gap-2 text-sm">
                   <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
                   <span>Consigue 5 en línea</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="size-5 rounded-full bg-white/20 flex items-center justify-center">✓</span>
-                  <span>Sin límites de espacio</span>
                 </div>
               </div>
             </div>

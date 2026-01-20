@@ -200,7 +200,13 @@ export function GameScreen({
       }
     } else {
       if (board[index]) return;
-      if (isUnbeatableMode && !isPlayer1Turn) return;
+      // If it's Unbeatable mode AND it's NOT player 1's turn, only allow AI to move (via handleCellClick call from makeAIMove)
+      // We'll add an 'isAutoMove' parameter to differentiate if we really need it, but for now just permit it.
+      if (isUnbeatableMode && !isPlayer1Turn && winner === null && index !== -1) {
+        // AI is moving, allow it.
+      } else if (isUnbeatableMode && !isPlayer1Turn) {
+        return; // User trying to click during AI turn
+      }
 
       const newBoard = [...board];
       newBoard[index] = symbol;
@@ -235,8 +241,8 @@ export function GameScreen({
       // AI or Opponent win in Unbeatable/Infinite
       setScores(prev => ({ ...prev, player2: prev.player2 + 1 }));
       if (isUnbeatableMode || isInfiniteMode) {
-        toast.error(`😆 La IA gana... ¡Sigue intentando!`, {
-          icon: '😆',
+        toast.error(`😆🤣🤪 ¡La IA gana!`, {
+          description: 'Sigue intentando, ¡quizás algún día le ganes!',
           duration: 5000,
         });
       } else {
