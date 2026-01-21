@@ -67,8 +67,8 @@ struct GameView: View {
             print("🔍 GameView onAppear - PurchaseManager.shared.hasRemovedAds: \(PurchaseManager.shared.hasRemovedAds)")
         }
         .onChange(of: gameLogic.isGameOver) { _, isGameOver in
-            if isGameOver && gameLogic.winner == .player1 && (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) {
-                print("🎊 CONFETTI TRIGGERED: Luna Mode Win!")
+            if isGameOver && (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) {
+                print("🎊 CONFETTI TRIGGERED: Luna Mode / Infinity Level End!")
                 triggerMagicalEffect()
                 showConfetti = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {

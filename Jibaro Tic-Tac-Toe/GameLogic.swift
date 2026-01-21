@@ -232,11 +232,11 @@ class GameLogic: ObservableObject {
             case .unbeatableMode:
                 switch winner {
                 case .player1:
-                    gameMessage = "Congratulations! You won! 🎉"
+                    gameMessage = "¡Felicidades! ¡Ganaste! 🎉"
                 case .player2:
-                    gameMessage = "AI Wins! Better luck next time 🤖"
+                    gameMessage = "😆🤣🤪 ¡La IA gana! Sigue intentando..."
                 case .none:
-                    gameMessage = "It's a draw! Well played 🤝"
+                    gameMessage = "¡Es un empate! Bien jugado 🤝"
                 }
             case .infinityLevel:
                 switch winner {
