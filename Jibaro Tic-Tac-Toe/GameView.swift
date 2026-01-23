@@ -1,4 +1,19 @@
 import SwiftUI
+import Foundation
+
+// MARK: - Localization Helpers
+func localizedGameString(for key: String) -> String {
+    let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
+    let strings: [String: String] = [
+        "luna_won": isSpanish ? "¡Luna ganó! ✨🎉" : "¡Luna won! ✨🎉",
+        "menu": isSpanish ? "Menú" : "Menu",
+        "luna_mode": isSpanish ? "🌙 Modo Luna" : "🌙 Luna Mode",
+        "unbeatable_mode": isSpanish ? "🤖 Modo Invencible" : "🤖 Unbeatable Mode",
+        "infinity_level": isSpanish ? "∞ Nivel Infinito" : "∞ Infinity Level",
+        "new_game": isSpanish ? "Nueva Partida" : "New Game"
+    ]
+    return strings[key] ?? key
+}
 
 struct GameView: View {
     @ObservedObject var gameLogic: GameLogic
@@ -6,7 +21,6 @@ struct GameView: View {
     @StateObject private var interstitialAdManager = InterstitialAdManager()
     @State private var showMagicalEffect = false
     @State private var showConfetti = false
-    @State private var gamesPlayedCount = 0
 
     var body: some View {
         NavigationView {
@@ -30,7 +44,7 @@ struct GameView: View {
 
                         // Mensaje cuando Luna gana
                         if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) && gameLogic.isGameOver && gameLogic.winner == .player1 {
-                            Text("¡Luna ganó! ✨🎉")
+                            Text(localizedGameString(for: "luna_won"))
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding()
@@ -80,9 +94,9 @@ struct GameView: View {
                 triggerWinHaptic()
 
                 // Mostrar anuncio intersticial cada 10 partidas (si no se han removido los anuncios)
-                gamesPlayedCount += 1
-                print("🎮 Games played: \(gamesPlayedCount)")
-                if interstitialAdManager.shouldShowAdAfterGames(gamesPlayedCount) {
+                dataManager.gamesPlayedCount += 1
+                print("🎮 Games played: \(dataManager.gamesPlayedCount)")
+                if interstitialAdManager.shouldShowAdAfterGames(dataManager.gamesPlayedCount) {
                     print("🎬 Should show interstitial ad now!")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         interstitialAdManager.presentInterstitialAd()
@@ -115,7 +129,7 @@ struct GameView: View {
                     Image(systemName: "chevron.left")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text((gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) ? "Menú" : "Menu")
+                    Text(localizedGameString(for: "menu"))
                         .font(.headline)
                         .fontWeight(.semibold)
                 }
@@ -159,11 +173,11 @@ struct GameView: View {
     private var gameModeTitle: String {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return "🌙 Luna Mode"
+            return localizedGameString(for: "luna_mode")
         case .unbeatableMode:
-            return "🤖 Unbeatable Mode"
+            return localizedGameString(for: "unbeatable_mode")
         case .infinityLevel:
-            return "∞ Infinity Level"
+            return localizedGameString(for: "infinity_level")
         }
     }
 
@@ -248,7 +262,7 @@ struct GameView: View {
     }
 
     private var gameMessageBackground: AnyShapeStyle {
-        if gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel {
+        if gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel || gameLogic.gameMode == .unbeatableMode {
             return AnyShapeStyle(.ultraThinMaterial)
         } else {
             return AnyShapeStyle(Color.white.opacity(0.2))
@@ -260,21 +274,22 @@ struct GameView: View {
         let boardSize: CGFloat = min(geometry.size.width - 40, 350)
         let cellSize: CGFloat = boardSize / 3
 
-        return VStack(spacing: 0) {
-            ForEach(0..<3, id: \.self) { row in
-                HStack(spacing: 0) {
-                    ForEach(0..<3, id: \.self) { col in
-                        ZStack {
-                            // Celda con fondo blanco y borde
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .stroke(gridBorderColor, lineWidth: 1.5)
-                                )
+        return ZStack {
+            // Background
+            Rectangle()
+                .fill(Color.white.opacity(0.95))
+                .frame(width: boardSize, height: boardSize)
+                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
 
-                            // Contenido de la celda (emoji del jugador)
-                            GameCell(
+            // Grid lines (# shape)
+            gameGridLines(cellSize: cellSize)
+
+            // Grid cells
+            VStack(spacing: 0) {
+                ForEach(0..<3, id: \.self) { row in
+                    HStack(spacing: 0) {
+                        ForEach(0..<3, id: \.self) { col in
+                            GameGridCell(
                                 emoji: gameLogic.getCellEmoji(row: row, col: col),
                                 gameMode: gameLogic.gameMode,
                                 cellSize: cellSize
@@ -282,16 +297,31 @@ struct GameView: View {
                                 gameLogic.makeMove(row: row, col: col)
                             }
                         }
-                        .frame(width: cellSize, height: cellSize)
                     }
                 }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.95))
-                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
-        )
+        .cornerRadius(12)
+    }
+
+    private func gameGridLines(cellSize: CGFloat) -> some View {
+        ZStack {
+            // Vertical lines (excluding borders)
+            ForEach(1..<3, id: \.self) { index in
+                Rectangle()
+                    .fill(gridBorderColor)
+                    .frame(width: 2.5, height: cellSize * 3)
+                    .offset(x: CGFloat(index) * cellSize - (cellSize * 1.5) + (cellSize / 2) - 1.25)
+            }
+
+            // Horizontal lines (excluding borders)
+            ForEach(1..<3, id: \.self) { index in
+                Rectangle()
+                    .fill(gridBorderColor)
+                    .frame(width: cellSize * 3, height: 2.5)
+                    .offset(y: CGFloat(index) * cellSize - (cellSize * 1.5) + (cellSize / 2) - 1.25)
+            }
+        }
     }
 
     private var gridBorderColor: Color {
@@ -299,7 +329,7 @@ struct GameView: View {
         case .lunaMode:
             return Color.pink.opacity(0.6)
         case .unbeatableMode:
-            return Color.gray.opacity(0.8)
+            return Color.pink.opacity(0.6) // Ahora usa el mismo color que Luna Mode
         case .infinityLevel:
             return Color.purple.opacity(0.6)
         }
@@ -344,11 +374,11 @@ struct GameView: View {
     private var newGameButtonText: String {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return "Nueva Partida"
+            return localizedGameString(for: "new_game")
         case .unbeatableMode:
-            return "New Game"
+            return localizedGameString(for: "new_game")
         case .infinityLevel:
-            return "Nueva Partida ∞"
+            return localizedGameString(for: "new_game") + " ∞"
         }
     }
 
@@ -465,18 +495,18 @@ struct ScoreCard: View {
     private var iconColor: Color {
         if gameMode == .unbeatableMode {
             if icon == "○" {
-                return .gray
+                return .white // Cambio a blanco para mejor contraste
             } else if icon == "×" {
-                return .black
+                return .white // Cambio a blanco para mejor contraste
             }
         }
         return .white // Color por defecto
     }
 }
 
+// MARK: - Game Grid Cell Component
 
-// MARK: - Game Cell Component
-struct GameCell: View {
+struct GameGridCell: View {
     let emoji: String
     let gameMode: GameMode
     let cellSize: CGFloat
@@ -508,12 +538,12 @@ struct GameCell: View {
     private var symbolColor: Color {
         if gameMode == .unbeatableMode {
             if emoji == "○" {
-                return Color.gray // Gris para Unbeatable (○)
+                return Color.pink // Usa color rosa para mejor visibilidad
             } else if emoji == "×" {
-                return Color.black // Negro para Unbeatable (×)
+                return Color.purple // Usa color púrpura para mejor visibilidad
             }
         }
-        return Color.primary // Color por defecto para otros modos
+        return Color.primary
     }
 
     private func triggerHaptic() {

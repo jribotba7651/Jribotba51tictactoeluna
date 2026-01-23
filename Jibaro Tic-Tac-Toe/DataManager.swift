@@ -15,6 +15,7 @@ class DataManager: ObservableObject {
         static let player2Wins = "player2Wins"
         static let draws = "draws"
         static let soundEnabled = "soundEnabled"
+        static let gamesPlayedCount = "gamesPlayedCount"
     }
 
     // MARK: - Configuraciones de jugadores
@@ -44,6 +45,13 @@ class DataManager: ObservableObject {
         }
     }
 
+    // MARK: - Contador de juegos para anuncios
+    @Published var gamesPlayedCount: Int {
+        didSet {
+            UserDefaults.standard.set(gamesPlayedCount, forKey: Keys.gamesPlayedCount)
+        }
+    }
+
     private init() {
         // Cargar configuración del jugador 1
         let player1Name = UserDefaults.standard.string(forKey: Keys.player1Name) ?? PlayerConfig.defaultPlayer1.name
@@ -63,6 +71,9 @@ class DataManager: ObservableObject {
 
         // Cargar configuración adicional
         self.soundEnabled = UserDefaults.standard.bool(forKey: Keys.soundEnabled)
+        
+        // Cargar contador de juegos
+        self.gamesPlayedCount = UserDefaults.standard.integer(forKey: Keys.gamesPlayedCount)
     }
 
     // MARK: - Métodos de guardado

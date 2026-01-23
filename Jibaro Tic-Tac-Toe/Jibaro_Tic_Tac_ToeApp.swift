@@ -9,6 +9,7 @@ class PurchaseManager: NSObject, ObservableObject {
 
     @Published var hasRemovedAds = false
     @Published var isLoading = false
+    @Published var errorMessage: String?
 
     private let removeAdsProductID = "com.jibaroenlaluna.tictactoe.removeads"
     private var products: [SKProduct] = []
@@ -43,15 +44,28 @@ class PurchaseManager: NSObject, ObservableObject {
     func purchaseRemoveAds() {
         guard let product = products.first(where: { $0.productIdentifier == removeAdsProductID }) else {
             print("❌ Product not found: \(removeAdsProductID)")
+            let errorMsg = "Los productos no están cargados. Por favor, intenta de nuevo en un momento."
+            DispatchQueue.main.async {
+                self.errorMessage = errorMsg
+                NotificationCenter.default.post(name: .init("PurchaseFailed"), object: errorMsg)
+            }
+            // Intentar cargar productos de nuevo
+            requestProducts()
             return
         }
 
         guard SKPaymentQueue.canMakePayments() else {
             print("❌ Cannot make payments")
+            let errorMsg = "No se pueden realizar pagos. Verifica la configuración de tu dispositivo."
+            DispatchQueue.main.async {
+                self.errorMessage = errorMsg
+                NotificationCenter.default.post(name: .init("PurchaseFailed"), object: errorMsg)
+            }
             return
         }
 
         isLoading = true
+        errorMessage = nil
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
         print("🛒 Initiating purchase for: \(removeAdsProductID)")
@@ -59,8 +73,21 @@ class PurchaseManager: NSObject, ObservableObject {
 
     func restorePurchases() {
         isLoading = true
+        errorMessage = nil
         SKPaymentQueue.default().restoreCompletedTransactions()
         print("🔄 Restoring purchases...")
+        
+        // Si no hay transacciones para restaurar, el sistema no llamará a updatedTransactions
+        // Necesitamos manejar esto con un timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            if self.isLoading && !self.hasRemovedAds {
+                // Si después de 2 segundos aún está cargando y no se restauró nada, probablemente no hay compras
+                self.isLoading = false
+                let errorMsg = "No se encontraron compras para restaurar."
+                self.errorMessage = errorMsg
+                NotificationCenter.default.post(name: .init("PurchaseFailed"), object: errorMsg)
+            }
+        }
     }
 
     func getRemoveAdsProduct() -> SKProduct? {
@@ -77,7 +104,18 @@ extension PurchaseManager: SKProductsRequestDelegate {
 
             if response.invalidProductIdentifiers.count > 0 {
                 print("⚠️ Invalid product identifiers: \(response.invalidProductIdentifiers)")
+                let errorMsg = "Algunos productos no son válidos. Por favor, contacta al soporte."
+                self.errorMessage = errorMsg
             }
+        }
+    }
+    
+    func request(_ request: SKRequest, didFailWithError error: Error) {
+        DispatchQueue.main.async {
+            print("❌ Failed to load products: \(error.localizedDescription)")
+            let errorMsg = "Error al cargar productos: \(error.localizedDescription)"
+            self.errorMessage = errorMsg
+            NotificationCenter.default.post(name: .init("PurchaseFailed"), object: errorMsg)
         }
     }
 }
@@ -101,6 +139,12 @@ extension PurchaseManager: SKPaymentTransactionObserver {
             case .restored:
                 print("🔄 Purchase restored: \(transaction.payment.productIdentifier)")
                 completePurchase(transaction)
+                // Cancelar el timeout de restorePurchases si se restauró exitosamente
+                DispatchQueue.main.async {
+                    if self.isLoading {
+                        self.isLoading = false
+                    }
+                }
             case .deferred:
                 print("⏳ Purchase deferred")
             case .purchasing:
@@ -121,6 +165,16 @@ extension PurchaseManager: SKPaymentTransactionObserver {
             }
         }
         SKPaymentQueue.default().finishTransaction(transaction)
+    }
+    
+    func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
+        DispatchQueue.main.async {
+            print("❌ Restore purchases failed: \(error.localizedDescription)")
+            self.isLoading = false
+            let errorMsg = "Error al restaurar compras: \(error.localizedDescription)"
+            self.errorMessage = errorMsg
+            NotificationCenter.default.post(name: .init("PurchaseFailed"), object: errorMsg)
+        }
     }
 }
 
@@ -185,8 +239,9 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
             return
         }
 
-        guard let interstitialAd = interstitialAd else {
-            print("❌ Interstitial ad not ready")
+        // Verificar que el anuncio esté listo antes de presentarlo
+        guard isReady, let interstitialAd = interstitialAd else {
+            print("❌ Interstitial ad not ready (isReady: \(isReady), ad: \(interstitialAd != nil))")
             loadInterstitialAd() // Try to load again
             return
         }

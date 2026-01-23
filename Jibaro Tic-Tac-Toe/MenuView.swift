@@ -98,7 +98,7 @@ struct MenuView: View {
                         }
 
                     // Banner ad on top
-                    AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/8816859712") // Production Banner ID
+                    AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Production Banner ID
                         .frame(height: 60)
                 }
                 .frame(height: 60)
@@ -136,11 +136,8 @@ struct GameModeCard: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 15) {
-                // Header con ícono y flecha
+                // Header con flecha
                 HStack {
-                    Text(mode.icon)
-                        .font(.largeTitle)
-
                     Spacer()
 
                     Image(systemName: "chevron.right")
