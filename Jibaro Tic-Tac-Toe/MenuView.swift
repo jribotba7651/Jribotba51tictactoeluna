@@ -94,18 +94,25 @@ struct MenuView: View {
                         .font(.caption2)
                         .foregroundColor(.clear)
                         .onAppear {
-                            print("🔍 Menu banner placeholder appeared")
+                            print("🔍 Menu banner placeholder appeared, hasRemovedAds: \(PurchaseManager.shared.hasRemovedAds)")
                         }
 
                     // Banner ad on top
                     AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Production Banner ID
                         .frame(height: 60)
+                        .id("menu-banner") // ID único para forzar recreación si es necesario
                 }
                 .frame(height: 60)
                 .cornerRadius(15)
+                .onAppear {
+                    print("🔍 Menu ad section appeared")
+                }
             } else {
                 // Espacio mínimo cuando los anuncios están removidos
                 Color.clear.frame(height: 8)
+                    .onAppear {
+                        print("🚫 Menu ads removed")
+                    }
             }
         }
     }

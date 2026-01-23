@@ -19,6 +19,7 @@ class PurchaseManager: NSObject, ObservableObject {
         SKPaymentQueue.default().add(self)
         loadPurchaseStatus()
         requestProducts()
+        DiagnosticsManager.shared.log("PurchaseManager initialized", type: .info)
     }
 
     deinit {
@@ -39,11 +40,13 @@ class PurchaseManager: NSObject, ObservableObject {
         let request = SKProductsRequest(productIdentifiers: Set([removeAdsProductID]))
         request.delegate = self
         request.start()
+        DiagnosticsManager.shared.log("Requesting products: \(removeAdsProductID)", type: .info)
     }
 
     func purchaseRemoveAds() {
         guard let product = products.first(where: { $0.productIdentifier == removeAdsProductID }) else {
             print("❌ Product not found: \(removeAdsProductID)")
+            DiagnosticsManager.shared.log("Purchase failed: Product not found", type: .error)
             let errorMsg = "Los productos no están cargados. Por favor, intenta de nuevo en un momento."
             DispatchQueue.main.async {
                 self.errorMessage = errorMsg
@@ -69,6 +72,7 @@ class PurchaseManager: NSObject, ObservableObject {
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
         print("🛒 Initiating purchase for: \(removeAdsProductID)")
+        DiagnosticsManager.shared.log("Initiating purchase for: \(removeAdsProductID)", type: .info)
     }
 
     func restorePurchases() {
@@ -101,11 +105,15 @@ extension PurchaseManager: SKProductsRequestDelegate {
         DispatchQueue.main.async {
             self.products = response.products
             print("✅ Products loaded: \(response.products.map { $0.productIdentifier })")
+            DiagnosticsManager.shared.log("Products loaded: \(response.products.count)", type: .success)
+            DiagnosticsManager.shared.iapStatus = "Loaded (\(response.products.count))"
 
             if response.invalidProductIdentifiers.count > 0 {
                 print("⚠️ Invalid product identifiers: \(response.invalidProductIdentifiers)")
                 let errorMsg = "Algunos productos no son válidos. Por favor, contacta al soporte."
                 self.errorMessage = errorMsg
+                DiagnosticsManager.shared.log("Invalid Product IDs: \(response.invalidProductIdentifiers)", type: .warning)
+                DiagnosticsManager.shared.iapStatus = "Invalid ID Found"
             }
         }
     }
@@ -115,6 +123,8 @@ extension PurchaseManager: SKProductsRequestDelegate {
             print("❌ Failed to load products: \(error.localizedDescription)")
             let errorMsg = "Error al cargar productos: \(error.localizedDescription)"
             self.errorMessage = errorMsg
+            DiagnosticsManager.shared.log("Failed to load products: \(error.localizedDescription)", type: .error)
+            DiagnosticsManager.shared.iapStatus = "Load Failed"
             NotificationCenter.default.post(name: .init("PurchaseFailed"), object: errorMsg)
         }
     }
@@ -127,10 +137,12 @@ extension PurchaseManager: SKPaymentTransactionObserver {
             switch transaction.transactionState {
             case .purchased:
                 print("✅ Purchase successful: \(transaction.payment.productIdentifier)")
+                DiagnosticsManager.shared.log("Purchase successful: \(transaction.payment.productIdentifier)", type: .success)
                 completePurchase(transaction)
             case .failed:
                 let errorMessage = transaction.error?.localizedDescription ?? "Unknown error"
                 print("❌ Purchase failed: \(errorMessage)")
+                DiagnosticsManager.shared.log("Purchase failed: \(errorMessage)", type: .error)
                 SKPaymentQueue.default().finishTransaction(transaction)
                 DispatchQueue.main.async {
                     self.isLoading = false
@@ -170,6 +182,7 @@ extension PurchaseManager: SKPaymentTransactionObserver {
     func paymentQueue(_ queue: SKPaymentQueue, restoreCompletedTransactionsFailedWithError error: Error) {
         DispatchQueue.main.async {
             print("❌ Restore purchases failed: \(error.localizedDescription)")
+            DiagnosticsManager.shared.log("Restore failed: \(error.localizedDescription)", type: .error)
             self.isLoading = false
             let errorMsg = "Error al restaurar compras: \(error.localizedDescription)"
             self.errorMessage = errorMsg
@@ -196,7 +209,9 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
     private var interstitialAd: InterstitialAd?
     private let adUnitID = "ca-app-pub-3258994800717071/8816859712" // Production Interstitial ID
     private let purchaseManager = PurchaseManager.shared
-    private let gameFrequency = 10 // Mostrar anuncio cada 10 juegos
+    private let gameFrequency = 10
+    private var retryAttempt = 0.0
+    private let maxRetryDelay: TimeInterval = 64.0
 
     override init() {
         super.init()
@@ -212,6 +227,7 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
 
         isLoading = true
         isReady = false
+        DiagnosticsManager.shared.log("Loading Interstitial Ad... (Retry: \(Int(retryAttempt)))", type: .info)
 
         let request = Request()
 
@@ -221,14 +237,29 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
 
                 if let error = error {
                     print("❌ Failed to load interstitial ad: \(error.localizedDescription)")
+                    DiagnosticsManager.shared.log("Interstitial load fail: \(error.localizedDescription)", type: .error)
+                    self?.retryLoading()
                     return
                 }
 
+                self?.retryAttempt = 0
                 self?.interstitialAd = ad
                 self?.interstitialAd?.fullScreenContentDelegate = self
                 self?.isReady = true
                 print("✅ Interstitial ad loaded successfully")
+                DiagnosticsManager.shared.log("Interstitial ad loaded", type: .success)
             }
+        }
+    }
+    
+    private func retryLoading() {
+        retryAttempt += 1
+        let delay = min(pow(2.0, retryAttempt), maxRetryDelay)
+        print("⏳ Retrying ad load in \(delay) seconds...")
+        DiagnosticsManager.shared.log("Retrying ad load in \(Int(delay))s", type: .warning)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            self.loadInterstitialAd()
         }
     }
 
@@ -242,22 +273,66 @@ class InterstitialAdManager: NSObject, ObservableObject, FullScreenContentDelega
         // Verificar que el anuncio esté listo antes de presentarlo
         guard isReady, let interstitialAd = interstitialAd else {
             print("❌ Interstitial ad not ready (isReady: \(isReady), ad: \(interstitialAd != nil))")
-            loadInterstitialAd() // Try to load again
+            DiagnosticsManager.shared.log("Ad not ready when requested", type: .warning)
+            loadInterstitialAd() // Trigger load immediately if not already loading
             return
         }
 
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
+        // Usar el controlador superior para presentar
+        guard let rootViewController = getRootViewController() else {
             print("❌ Could not find root view controller")
+            DiagnosticsManager.shared.log("No RootVC found", type: .error)
             return
         }
+        
+        let topController = getTopViewController(base: rootViewController)
+        interstitialAd.present(from: topController)
+        print("🎬 Presenting interstitial ad from \(String(describing: type(of: topController)))")
+        DiagnosticsManager.shared.log("Presenting Ad", type: .success)
+    }
 
-        interstitialAd.present(from: rootViewController)
-        print("🎬 Presenting interstitial ad")
+    private func getRootViewController() -> UIViewController? {
+        return UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }?.rootViewController
+    }
+
+    private func getTopViewController(base: UIViewController) -> UIViewController {
+        if let nav = base as? UINavigationController, let visible = nav.visibleViewController {
+            return getTopViewController(base: visible)
+        }
+        if let tab = base as? UITabBarController, let selected = tab.selectedViewController {
+            return getTopViewController(base: selected)
+        }
+        if let presented = base.presentedViewController {
+            return getTopViewController(base: presented)
+        }
+        return base
     }
 
     func shouldShowAdAfterGames(_ gamesCount: Int) -> Bool {
-        return !purchaseManager.hasRemovedAds && gamesCount % gameFrequency == 0
+        // Verificar que no se hayan removido los anuncios
+        guard !purchaseManager.hasRemovedAds else {
+            print("🚫 Ads removed - not showing interstitial")
+            return false
+        }
+        
+        // Verificar que el anuncio esté listo
+        guard isReady else {
+            print("⏳ Ad not ready yet - isReady: \(isReady)")
+            return false
+        }
+        
+        // Mostrar anuncio cuando el contador sea múltiplo de 10 (10, 20, 30, etc.)
+        let shouldShow = gamesCount > 0 && gamesCount % gameFrequency == 0
+        print("🎮 Should show ad? gamesCount: \(gamesCount), gameFrequency: \(gameFrequency), modulo: \(gamesCount % gameFrequency), shouldShow: \(shouldShow), isReady: \(isReady)")
+        
+        if shouldShow {
+            print("✅ Conditions met for showing ad!")
+        }
+        
+        return shouldShow
     }
 
     // MARK: - FullScreenContentDelegate
@@ -296,27 +371,107 @@ struct AdMobBannerView: UIViewRepresentable {
 
         let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitID
-        bannerView.rootViewController = getRootViewController()
+        bannerView.delegate = context.coordinator
+        
+        // Intentar obtener el root view controller inmediatamente
+        if let rootVC = getRootViewController() {
+            bannerView.rootViewController = rootVC
+            print("✅ Banner rootViewController set immediately")
+        } else {
+            print("⚠️ Root View Controller not found initially, will retry")
+            DiagnosticsManager.shared.log("Banner: RootVC missing initially", type: .warning)
+            // Reintentar después de un breve delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                if let rootVC = self.getRootViewController() {
+                    bannerView.rootViewController = rootVC
+                    print("✅ Banner rootViewController set on retry")
+                    // Recargar el banner después de configurar el rootViewController
+                    bannerView.load(Request())
+                }
+            }
+        }
 
         let request = Request()
         bannerView.load(request)
 
         print("🎯 AdMob Banner loading with ID: \(adUnitID)")
+        DiagnosticsManager.shared.log("Banner loading: \(adUnitID)", type: .info)
 
         return bannerView
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        // Si el estado de compra cambió, recrear la vista
-        if purchaseManager.hasRemovedAds && uiView is BannerView {
-            // Reemplazar con vista vacía
-            if let containerView = uiView.superview {
-                let emptyView = UIView()
-                emptyView.backgroundColor = UIColor.clear
-                emptyView.frame = uiView.frame
-                containerView.addSubview(emptyView)
-                uiView.removeFromSuperview()
+        guard let bannerView = uiView as? BannerView else { return }
+        
+        // Si el usuario compró la remoción de anuncios, no hacer nada (la vista se manejará en makeUIView)
+        if purchaseManager.hasRemovedAds {
+            return
+        }
+        
+        // Asegurar que el rootViewController esté configurado - esto es crítico
+        if bannerView.rootViewController == nil {
+            if let rootVC = getRootViewController() {
+                bannerView.rootViewController = rootVC
+                print("✅ Banner rootViewController set in updateUIView")
+                // Recargar el banner después de configurar el rootViewController
+                bannerView.load(Request())
+            } else {
+                // Si aún no está disponible, intentar de nuevo
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    if let rootVC = self.getRootViewController() {
+                        bannerView.rootViewController = rootVC
+                        bannerView.load(Request())
+                        print("✅ Banner rootViewController set in delayed updateUIView")
+                    }
+                }
             }
+        }
+        
+        // Asegurar que el adUnitID sea correcto
+        if bannerView.adUnitID != adUnitID {
+            bannerView.adUnitID = adUnitID
+            let request = Request()
+            bannerView.load(request)
+            print("🔄 Banner reloaded with correct adUnitID")
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator: NSObject, BannerViewDelegate {
+        func bannerViewDidReceiveAd(_ bannerView: BannerView) {
+            print("✅ Banner ad loaded successfully")
+            DiagnosticsManager.shared.log("Banner loaded", type: .success)
+        }
+
+        func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
+            print("❌ Banner ad failed to load: \(error.localizedDescription)")
+            DiagnosticsManager.shared.log("Banner failed: \(error.localizedDescription)", type: .error)
+            
+            // Reintentar cargar el banner después de un tiempo
+            DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
+                print("🔄 Retrying banner load...")
+                DiagnosticsManager.shared.log("Retrying banner...", type: .warning)
+                bannerView.load(Request())
+            }
+        }
+
+        func bannerViewDidRecordImpression(_ bannerView: BannerView) {
+            print("🎯 Banner ad recorded impression")
+        }
+
+        func bannerViewWillPresentScreen(_ bannerView: BannerView) {
+            print("📱 Banner ad will present screen")
+        }
+
+        func bannerViewWillDismissScreen(_ bannerView: BannerView) {
+            print("👋 Banner ad will dismiss screen")
+        }
+
+        func bannerViewDidDismissScreen(_ bannerView: BannerView) {
+            print("✅ Banner ad did dismiss screen")
         }
     }
 
@@ -338,7 +493,18 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         MobileAds.shared.start { status in
             print("🎯 Google Mobile Ads SDK initialized successfully")
             print("🎯 AdMob adapters status: \(status)")
+            DiagnosticsManager.shared.adMobStatus = "Initialized"
+            DiagnosticsManager.shared.log("AdMob SDK Initialized", type: .success)
         }
+        
+        // En producción (App Store), los anuncios de test se deshabilitan automáticamente
+        // Los anuncios de "test mode" solo aparecen en desarrollo
+        // Cuando la app esté en el App Store, AdMob automáticamente mostrará anuncios reales
+        #if DEBUG
+        print("🔧 DEBUG mode: Test ads will be shown")
+        #else
+        print("🚀 RELEASE mode: Production ads will be shown")
+        #endif
 
         print("🍃 AppDelegate initialized successfully")
         return true

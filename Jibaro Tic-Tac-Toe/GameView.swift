@@ -1,19 +1,8 @@
 import SwiftUI
 import Foundation
 
-// MARK: - Localization Helpers
-func localizedGameString(for key: String) -> String {
-    let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
-    let strings: [String: String] = [
-        "luna_won": isSpanish ? "¡Luna ganó! ✨🎉" : "¡Luna won! ✨🎉",
-        "menu": isSpanish ? "Menú" : "Menu",
-        "luna_mode": isSpanish ? "🌙 Modo Luna" : "🌙 Luna Mode",
-        "unbeatable_mode": isSpanish ? "🤖 Modo Invencible" : "🤖 Unbeatable Mode",
-        "infinity_level": isSpanish ? "∞ Nivel Infinito" : "∞ Infinity Level",
-        "new_game": isSpanish ? "Nueva Partida" : "New Game"
-    ]
-    return strings[key] ?? key
-}
+// MARK: - Localization Helpers REMOVED
+// Logic consolidated into LocalizationManager
 
 struct GameView: View {
     @ObservedObject var gameLogic: GameLogic
@@ -44,7 +33,7 @@ struct GameView: View {
 
                         // Mensaje cuando Luna gana
                         if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) && gameLogic.isGameOver && gameLogic.winner == .player1 {
-                            Text(localizedGameString(for: "luna_won"))
+                            Text("luna_won".localized)
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding()
@@ -80,8 +69,11 @@ struct GameView: View {
             gameLogic.resetGame()
             print("🔍 GameView onAppear - PurchaseManager.shared.hasRemovedAds: \(PurchaseManager.shared.hasRemovedAds)")
         }
-        .onChange(of: gameLogic.isGameOver) { _, isGameOver in
-            if isGameOver && (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) {
+        .onChange(of: gameLogic.isGameOver) { oldValue, newValue in
+            // Solo procesar cuando el juego cambia de false a true (juego terminado)
+            guard !oldValue && newValue else { return }
+            
+            if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) {
                 print("🎊 CONFETTI TRIGGERED: Luna Mode / Infinity Level End!")
                 triggerMagicalEffect()
                 showConfetti = true
@@ -90,18 +82,38 @@ struct GameView: View {
                     print("🎊 CONFETTI STOPPED")
                 }
             }
-            if isGameOver {
-                triggerWinHaptic()
+            
+            triggerWinHaptic()
 
-                // Mostrar anuncio intersticial cada 10 partidas (si no se han removido los anuncios)
-                dataManager.gamesPlayedCount += 1
-                print("🎮 Games played: \(dataManager.gamesPlayedCount)")
-                if interstitialAdManager.shouldShowAdAfterGames(dataManager.gamesPlayedCount) {
-                    print("🎬 Should show interstitial ad now!")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // Mostrar anuncio intersticial cada 10 partidas (si no se han removido los anuncios)
+            dataManager.gamesPlayedCount += 1
+            let currentCount = dataManager.gamesPlayedCount
+            print("🎮 Games played: \(currentCount) | Game mode: \(gameLogic.gameMode)")
+            print("🎮 PurchaseManager.hasRemovedAds: \(PurchaseManager.shared.hasRemovedAds)")
+            print("🎮 InterstitialAdManager.isReady: \(interstitialAdManager.isReady)")
+            
+            // Verificar si debemos mostrar el anuncio
+            let shouldShow = interstitialAdManager.shouldShowAdAfterGames(currentCount)
+            print("🎮 shouldShowAdAfterGames returned: \(shouldShow)")
+            
+            if shouldShow {
+                print("🎬 Should show interstitial ad now! (Game #\(currentCount))")
+                // Esperar un poco para que el usuario vea el resultado del juego
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    // Verificar nuevamente antes de mostrar (por si el usuario compró remover anuncios)
+                    let stillShouldShow = interstitialAdManager.shouldShowAdAfterGames(currentCount)
+                    print("🎬 After delay, shouldShow: \(stillShouldShow)")
+                    if stillShouldShow {
+                        print("🎬 Calling presentInterstitialAd()")
                         interstitialAdManager.presentInterstitialAd()
+                    } else {
+                        print("🚫 Ad not shown - user may have removed ads or ad not ready")
                     }
                 }
+            } else {
+                let nextAdAt = ((currentCount / 10) + 1) * 10
+                let remainder = currentCount % 10
+                print("📊 Next ad will show at game #\(nextAdAt) (currently at #\(currentCount), remainder: \(remainder))")
             }
         }
     }
@@ -129,7 +141,7 @@ struct GameView: View {
                     Image(systemName: "chevron.left")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text(localizedGameString(for: "menu"))
+                    Text("menu".localized)
                         .font(.headline)
                         .fontWeight(.semibold)
                 }
@@ -173,11 +185,11 @@ struct GameView: View {
     private var gameModeTitle: String {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return localizedGameString(for: "luna_mode")
+            return "luna_mode".localized
         case .unbeatableMode:
-            return localizedGameString(for: "unbeatable_mode")
+            return "unbeatable_mode".localized
         case .infinityLevel:
-            return localizedGameString(for: "infinity_level")
+            return "infinity_level".localized
         }
     }
 
@@ -186,6 +198,7 @@ struct GameView: View {
         let hasRemovedAds = PurchaseManager.shared.hasRemovedAds
 
         return Group {
+            // Mostrar banner en TODOS los modos de juego (lunaMode, unbeatableMode, infinityLevel)
             if !hasRemovedAds {
                 ZStack {
                     // Placeholder background
@@ -197,12 +210,13 @@ struct GameView: View {
                         .font(.caption2)
                         .foregroundColor(.clear)
                         .onAppear {
-                            print("🔍 Advertisement placeholder appeared, hasRemovedAds: \(hasRemovedAds)")
+                            print("🔍 Advertisement placeholder appeared, hasRemovedAds: \(hasRemovedAds), gameMode: \(gameLogic.gameMode)")
                         }
 
                     // Banner ad on top (cuando cargue, cubrirá el placeholder)
                     AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Production Banner ID
                         .frame(height: 60)
+                        .id("banner-\(gameLogic.gameMode)") // Forzar recreación cuando cambia el modo
                 }
                 .frame(height: 60)
                 .cornerRadius(15)
@@ -374,11 +388,11 @@ struct GameView: View {
     private var newGameButtonText: String {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return localizedGameString(for: "new_game")
+            return "new_game".localized
         case .unbeatableMode:
-            return localizedGameString(for: "new_game")
+            return "new_game".localized
         case .infinityLevel:
-            return localizedGameString(for: "new_game") + " ∞"
+            return "new_game".localized + " ∞"
         }
     }
 
