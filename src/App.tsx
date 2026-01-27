@@ -19,7 +19,7 @@ export default function App() {
   const [lunaStartsFirst, setLunaStartsFirst] = useState(true);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-pink-400 via-fuchsia-400 to-purple-500 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         {!gameMode ? (
           <HomeScreen
