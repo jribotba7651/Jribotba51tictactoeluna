@@ -30,24 +30,6 @@ export function TicTacToeBoard({
 
   return (
     <div className="relative p-4 md:p-8 max-w-full overflow-auto mx-auto flex justify-center">
-      {/* Background paper texture */}
-      <div
-        className="absolute inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-3xl shadow-2xl"
-        style={{
-          backgroundImage: `
-            repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 20px,
-              rgba(203, 213, 225, 0.1) 20px,
-              rgba(203, 213, 225, 0.1) 21px
-            )
-          `,
-          border: '3px solid rgba(167, 139, 250, 0.2)',
-          zIndex: 0
-        }}
-      />
-
       {/* Grid container */}
       <div
         className="relative"
@@ -69,10 +51,9 @@ export function TicTacToeBoard({
               <path
                 key={`h-${i}`}
                 d={`M 20 ${(i + 1) * (cellSize + gap) - gap / 2} Q ${boardWidth / 2} ${(i + 1) * (cellSize + gap) - gap / 2 + 2}, ${boardWidth - 20} ${(i + 1) * (cellSize + gap) - gap / 2}`}
-                stroke="#374151"
-                strokeWidth="8"
+                stroke="rgba(255, 255, 255, 0.9)"
+                strokeWidth="3"
                 fill="none"
-                opacity="0.8"
                 strokeLinecap="round"
               />
             ))}
@@ -81,10 +62,9 @@ export function TicTacToeBoard({
               <path
                 key={`v-${i}`}
                 d={`M ${(i + 1) * (cellSize + gap) - gap / 2} 20 Q ${(i + 1) * (cellSize + gap) - gap / 2 + 2} ${boardHeight / 2}, ${(i + 1) * (cellSize + gap) - gap / 2} ${boardHeight - 20}`}
-                stroke="#374151"
-                strokeWidth="8"
+                stroke="rgba(255, 255, 255, 0.9)"
+                strokeWidth="3"
                 fill="none"
-                opacity="0.8"
                 strokeLinecap="round"
               />
             ))}
