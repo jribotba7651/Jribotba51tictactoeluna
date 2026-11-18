@@ -68,11 +68,12 @@ extension LinearGradient {
         endPoint: .bottomTrailing
     )
 
-    // Gradiente para Unbeatable Mode
+    // Gradiente para Unbeatable Mode - Ahora usa la estética de Luna Mode
     static let unbeatableMode = LinearGradient(
         gradient: Gradient(colors: [
-            Color.unbeatablePrimary,
-            Color.unbeatableSecondary
+            Color.lunaModePrimary,
+            Color.lunaModeSecondary,
+            Color.lunaModeTertiary
         ]),
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -88,11 +89,11 @@ extension LinearGradient {
         endPoint: .trailing
     )
 
-    // Gradiente para botones de Unbeatable Mode
+    // Gradiente para botones de Unbeatable Mode - Ahora usa la estética de Luna Mode
     static let unbeatableModeButton = LinearGradient(
         gradient: Gradient(colors: [
-            Color.green.opacity(0.8),
-            Color.blue.opacity(0.6)
+            Color.pink,
+            Color.red
         ]),
         startPoint: .leading,
         endPoint: .trailing
@@ -132,6 +133,14 @@ extension LinearGradient {
         gradient: Gradient(colors: [
             Color.purple.opacity(0.7),
             Color.indigo.opacity(0.5)
+        ]),
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+    static let menuCardMemory = LinearGradient(
+        gradient: Gradient(colors: [
+            Color.green.opacity(0.7),
+            Color.teal.opacity(0.5)
         ]),
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -292,3 +301,207 @@ extension View {
     }
 }
 #endif
+
+// MARK: - Estilos de Botones Uniformes
+struct PrimaryButtonStyle: ButtonStyle {
+    let color: Color
+    let size: ButtonSize
+
+    enum ButtonSize {
+        case small, medium, large
+
+        var padding: (horizontal: CGFloat, vertical: CGFloat) {
+            switch self {
+            case .small: return (16, 8)
+            case .medium: return (20, 12)
+            case .large: return (24, 16)
+            }
+        }
+
+        var fontSize: CGFloat {
+            switch self {
+            case .small: return 14
+            case .medium: return 16
+            case .large: return 18
+            }
+        }
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: size.fontSize, weight: .semibold, design: .rounded))
+            .foregroundColor(.white)
+            .padding(.horizontal, size.padding.horizontal)
+            .padding(.vertical, size.padding.vertical)
+            .background(
+                LinearGradient(
+                    colors: [color.opacity(0.8), color.opacity(0.6)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(Capsule())
+            .shadow(color: color.opacity(0.4), radius: configuration.isPressed ? 2 : 5)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+struct SecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 16, weight: .medium, design: .rounded))
+            .foregroundColor(.primary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white.opacity(0.8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+            )
+            .shadow(color: .gray.opacity(0.2), radius: configuration.isPressed ? 2 : 4)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+struct GameCardStyle: ButtonStyle {
+    let gradient: LinearGradient
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(gradient)
+                    .overlay(
+                        // Efecto de vidrio
+                        LinearGradient(
+                            colors: [
+                                .white.opacity(0.3),
+                                .clear,
+                                .clear,
+                                .white.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 25)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.8), .white.opacity(0.2)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 8)
+    }
+}
+
+// MARK: - Sistema de Tipografía Uniforme
+struct GameTypography {
+    // Títulos principales
+    static func gameTitle(size: CGFloat = 24) -> Font {
+        .system(size: size, weight: .bold, design: .rounded)
+    }
+
+    // Subtítulos
+    static func gameSubtitle(size: CGFloat = 16) -> Font {
+        .system(size: size, weight: .medium, design: .rounded)
+    }
+
+    // Texto de botones
+    static func buttonText(size: CGFloat = 16) -> Font {
+        .system(size: size, weight: .semibold, design: .rounded)
+    }
+
+    // Texto de estadísticas
+    static func statText(size: CGFloat = 14) -> Font {
+        .system(size: size, weight: .bold, design: .rounded)
+    }
+
+    // Texto descriptivo
+    static func bodyText(size: CGFloat = 14) -> Font {
+        .system(size: size, weight: .medium, design: .rounded)
+    }
+}
+
+// MARK: - Paleta de Colores Uniforme
+struct GameColors {
+    // Colores primarios
+    static let primary = Color.blue
+    static let secondary = Color.green
+    static let accent = Color.orange
+    static let danger = Color.red
+    static let warning = Color.yellow
+
+    // Gradientes principales
+    static let primaryGradient = LinearGradient(
+        colors: [Color.blue.opacity(0.8), Color.purple.opacity(0.6)],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
+    static let secondaryGradient = LinearGradient(
+        colors: [Color.green.opacity(0.8), Color.teal.opacity(0.6)],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
+    static let accentGradient = LinearGradient(
+        colors: [Color.orange.opacity(0.8), Color.pink.opacity(0.6)],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
+    // Colores de fondo
+    static let backgroundPrimary = LinearGradient(
+        colors: [
+            Color.blue.opacity(0.1),
+            Color.purple.opacity(0.05),
+            Color.pink.opacity(0.1)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let cardBackground = Color.white.opacity(0.8)
+    static let overlayBackground = Color.black.opacity(0.7)
+}
+
+// MARK: - Modificadores de Vista Uniformes
+extension View {
+    // Aplicar estilo de carta estándar
+    func standardCard(padding: CGFloat = 16) -> some View {
+        self
+            .padding(padding)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(GameColors.cardBackground)
+                    .shadow(color: .gray.opacity(0.2), radius: 5)
+            )
+    }
+
+    // Aplicar fondo estándar del juego
+    func gameBackground() -> some View {
+        self
+            .background(GameColors.backgroundPrimary.ignoresSafeArea())
+    }
+
+    // Aplicar estilo de título estándar
+    func gameTitle(_ text: String, color: Color = .primary) -> some View {
+        VStack {
+            self
+            Text(text)
+                .font(GameTypography.gameTitle())
+                .foregroundColor(color)
+                .multilineTextAlignment(.center)
+        }
+    }
+}

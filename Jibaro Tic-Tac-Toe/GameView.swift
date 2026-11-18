@@ -1,13 +1,16 @@
 import SwiftUI
 import Foundation
+import GoogleMobileAds
+import UIKit
 
-// MARK: - Localization Helpers REMOVED
-// Logic consolidated into LocalizationManager
+// MARK: - AdManager is defined in MenuView.swift
+
+// BannerAdView is defined in MenuView.swift
 
 struct GameView: View {
     @ObservedObject var gameLogic: GameLogic
     @StateObject private var dataManager = DataManager.shared
-    @StateObject private var interstitialAdManager = InterstitialAdManager()
+    @ObservedObject private var interstitialAdManager = AdManager.shared
     @State private var showMagicalEffect = false
     @State private var showConfetti = false
 
@@ -32,8 +35,8 @@ struct GameView: View {
                         scoreSection
 
                         // Mensaje cuando Luna gana
-                        if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) && gameLogic.isGameOver && gameLogic.winner == .player1 {
-                            Text("luna_won".localized)
+                        if gameLogic.gameMode == .lunaMode && gameLogic.isGameOver && gameLogic.winner == .player1 {
+                            Text("¡Luna ganó! ✨🎉")
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding()
@@ -45,6 +48,10 @@ struct GameView: View {
 
                         // Mensaje del juego
                         gameMessageSection
+                        
+                        Text("--- EDITANDO GAMEVIEW.SWIFT ---")
+                            .foregroundColor(.yellow)
+                            .font(.caption)
 
                         // Tablero de juego
                         gameBoard(for: geometry)
@@ -57,8 +64,8 @@ struct GameView: View {
                     .padding(.horizontal, 20)
                     .confetti(isActive: $showConfetti)
 
-                    // Efectos mágicos para Luna Mode e Infinity Level
-                    if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) && showMagicalEffect {
+                    // Efectos mágicos para Luna Mode
+                    if gameLogic.gameMode == .lunaMode && showMagicalEffect {
                         magicalEffectsOverlay(in: geometry)
                     }
                 }
@@ -73,8 +80,8 @@ struct GameView: View {
             // Solo procesar cuando el juego cambia de false a true (juego terminado)
             guard !oldValue && newValue else { return }
             
-            if (gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel) {
-                print("🎊 CONFETTI TRIGGERED: Luna Mode / Infinity Level End!")
+            if gameLogic.gameMode == .lunaMode {
+                print("🎊 CONFETTI TRIGGERED: Luna Mode End!")
                 triggerMagicalEffect()
                 showConfetti = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
@@ -85,36 +92,8 @@ struct GameView: View {
             
             triggerWinHaptic()
 
-            // Mostrar anuncio intersticial cada 10 partidas (si no se han removido los anuncios)
-            dataManager.gamesPlayedCount += 1
-            let currentCount = dataManager.gamesPlayedCount
-            print("🎮 Games played: \(currentCount) | Game mode: \(gameLogic.gameMode)")
-            print("🎮 PurchaseManager.hasRemovedAds: \(PurchaseManager.shared.hasRemovedAds)")
-            print("🎮 InterstitialAdManager.isReady: \(interstitialAdManager.isReady)")
-            
-            // Verificar si debemos mostrar el anuncio
-            let shouldShow = interstitialAdManager.shouldShowAdAfterGames(currentCount)
-            print("🎮 shouldShowAdAfterGames returned: \(shouldShow)")
-            
-            if shouldShow {
-                print("🎬 Should show interstitial ad now! (Game #\(currentCount))")
-                // Esperar un poco para que el usuario vea el resultado del juego
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    // Verificar nuevamente antes de mostrar (por si el usuario compró remover anuncios)
-                    let stillShouldShow = interstitialAdManager.shouldShowAdAfterGames(currentCount)
-                    print("🎬 After delay, shouldShow: \(stillShouldShow)")
-                    if stillShouldShow {
-                        print("🎬 Calling presentInterstitialAd()")
-                        interstitialAdManager.presentInterstitialAd()
-                    } else {
-                        print("🚫 Ad not shown - user may have removed ads or ad not ready")
-                    }
-                }
-            } else {
-                let nextAdAt = ((currentCount / 10) + 1) * 10
-                let remainder = currentCount % 10
-                print("📊 Next ad will show at game #\(nextAdAt) (currently at #\(currentCount), remainder: \(remainder))")
-            }
+            // El contador de juegos y anuncios intersticiales se maneja en GameLogic.swift
+            print("🎮 Game finished in GameView - GameLogic handles ad logic")
         }
     }
 
@@ -126,7 +105,9 @@ struct GameView: View {
         case .unbeatableMode:
             return LinearGradient.unbeatableMode
         case .infinityLevel:
-            return LinearGradient.lunaMode // Usa el mismo gradiente que Luna Mode
+            return LinearGradient.lunaMode
+        case .memoryMatch:
+            return LinearGradient(colors: [Color.green.opacity(0.4), Color.teal.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
 
@@ -141,7 +122,7 @@ struct GameView: View {
                     Image(systemName: "chevron.left")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text("menu".localized)
+                    Text("Menú")
                         .font(.headline)
                         .fontWeight(.semibold)
                 }
@@ -185,11 +166,13 @@ struct GameView: View {
     private var gameModeTitle: String {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return "luna_mode".localized
+            return "🌙 Modo Luna"
         case .unbeatableMode:
-            return "unbeatable_mode".localized
+            return "🤖 Modo Invencible"
         case .infinityLevel:
-            return "infinity_level".localized
+            return "∞ Infinity Level"
+        case .memoryMatch:
+            return "🧠 Memoria Boricua"
         }
     }
 
@@ -198,7 +181,7 @@ struct GameView: View {
         let hasRemovedAds = PurchaseManager.shared.hasRemovedAds
 
         return Group {
-            // Mostrar banner en TODOS los modos de juego (lunaMode, unbeatableMode, infinityLevel)
+            // Mostrar banner en TODOS los modos de juego (lunaMode, unbeatableMode, memoryMatch)
             if !hasRemovedAds {
                 ZStack {
                     // Placeholder background
@@ -214,7 +197,7 @@ struct GameView: View {
                         }
 
                     // Banner ad on top (cuando cargue, cubrirá el placeholder)
-                    AdMobBannerView(adUnitID: "ca-app-pub-3258994800717071/5955178067") // Production Banner ID
+                    BannerAdView(adUnitID: AdManager.bannerAdUnitID)
                         .frame(height: 60)
                         .id("banner-\(gameLogic.gameMode)") // Forzar recreación cuando cambia el modo
                 }
@@ -276,7 +259,7 @@ struct GameView: View {
     }
 
     private var gameMessageBackground: AnyShapeStyle {
-        if gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel || gameLogic.gameMode == .unbeatableMode {
+        if gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .unbeatableMode {
             return AnyShapeStyle(.ultraThinMaterial)
         } else {
             return AnyShapeStyle(Color.white.opacity(0.2))
@@ -287,13 +270,17 @@ struct GameView: View {
     private func gameBoard(for geometry: GeometryProxy) -> some View {
         let boardSize: CGFloat = min(geometry.size.width - 40, 350)
         let cellSize: CGFloat = boardSize / 3
+        let isTransparentGrid = gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel || gameLogic.gameMode == .unbeatableMode
 
         return ZStack {
-            // Background
-            Rectangle()
-                .fill(Color.white.opacity(0.95))
-                .frame(width: boardSize, height: boardSize)
-                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+            // No background for transparent grid modes
+            if !isTransparentGrid {
+                Rectangle()
+                    .fill(Color.white.opacity(0.95))
+                    .frame(width: boardSize, height: boardSize)
+                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    .cornerRadius(12)
+            }
 
             // Grid lines (# shape)
             gameGridLines(cellSize: cellSize)
@@ -315,37 +302,39 @@ struct GameView: View {
                 }
             }
         }
-        .cornerRadius(12)
+        .frame(width: boardSize, height: boardSize)
     }
 
     private func gameGridLines(cellSize: CGFloat) -> some View {
-        ZStack {
-            // Vertical lines (excluding borders)
-            ForEach(1..<3, id: \.self) { index in
+        let color = gridBorderColor
+        let isTransparentGrid = gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .infinityLevel || gameLogic.gameMode == .unbeatableMode
+
+        return ZStack {
+            // Líneas Verticales (con glow para todos los modos transparentes)
+            ForEach([-0.5, 0.5], id: \.self) { offset in
                 Rectangle()
-                    .fill(gridBorderColor)
-                    .frame(width: 2.5, height: cellSize * 3)
-                    .offset(x: CGFloat(index) * cellSize - (cellSize * 1.5) + (cellSize / 2) - 1.25)
+                    .fill(color)
+                    .frame(width: 3.5, height: cellSize * 3) // Un poco más gruesas para exquisitez
+                    .offset(x: offset * cellSize)
+                    .shadow(color: isTransparentGrid ? color.opacity(0.8) : .clear, radius: 6)
             }
 
-            // Horizontal lines (excluding borders)
-            ForEach(1..<3, id: \.self) { index in
+            // Líneas Horizontales (con glow para todos los modos transparentes)
+            ForEach([-0.5, 0.5], id: \.self) { offset in
                 Rectangle()
-                    .fill(gridBorderColor)
-                    .frame(width: cellSize * 3, height: 2.5)
-                    .offset(y: CGFloat(index) * cellSize - (cellSize * 1.5) + (cellSize / 2) - 1.25)
+                    .fill(color)
+                    .frame(width: cellSize * 3, height: 3.5) // Un poco más gruesas para exquisitez
+                    .offset(y: offset * cellSize)
+                    .shadow(color: isTransparentGrid ? color.opacity(0.8) : .clear, radius: 6)
             }
         }
     }
 
     private var gridBorderColor: Color {
-        switch gameLogic.gameMode {
-        case .lunaMode:
+        if gameLogic.gameMode == .lunaMode || gameLogic.gameMode == .unbeatableMode {
+            return Color.white
+        } else {
             return Color.pink.opacity(0.6)
-        case .unbeatableMode:
-            return Color.pink.opacity(0.6) // Ahora usa el mismo color que Luna Mode
-        case .infinityLevel:
-            return Color.purple.opacity(0.6)
         }
     }
 
@@ -382,17 +371,21 @@ struct GameView: View {
             return "🔄"
         case .infinityLevel:
             return "∞"
+        case .memoryMatch:
+            return "🧠"
         }
     }
 
     private var newGameButtonText: String {
         switch gameLogic.gameMode {
         case .lunaMode:
-            return "new_game".localized
+            return "Nueva Partida"
         case .unbeatableMode:
-            return "new_game".localized
+            return "Nueva Partida"
         case .infinityLevel:
-            return "new_game".localized + " ∞"
+            return "Nueva Partida ∞"
+        case .memoryMatch:
+            return "Nueva Memoria"
         }
     }
 
@@ -404,6 +397,8 @@ struct GameView: View {
             return LinearGradient.unbeatableModeButton
         case .infinityLevel:
             return LinearGradient(colors: [Color.purple, Color.indigo], startPoint: .leading, endPoint: .trailing)
+        case .memoryMatch:
+            return LinearGradient(colors: [Color.green, Color.teal], startPoint: .leading, endPoint: .trailing)
         }
     }
 
@@ -526,43 +521,119 @@ struct GameGridCell: View {
     let cellSize: CGFloat
     let action: () -> Void
     @State private var isPressed = false
+    @State private var bounceEffect = false
 
     var body: some View {
         Button(action: {
             triggerHaptic()
+            triggerBounceEffect()
             action()
         }) {
-            Text(emoji)
-                .font(.system(size: cellSize * 0.4))
-                .fontWeight(.bold)
-                .foregroundColor(symbolColor)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
-                .scaleEffect(isPressed ? 0.95 : 1.0)
-                .animation(.easeInOut(duration: 0.3), value: isPressed)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: emoji)
+            ZStack {
+                // NO mostrar ningún fondo para Unbeatable Mode - completamente transparente
+                // Los otros modos pueden tener fondos si es necesario en el futuro
+                if gameMode != .unbeatableMode {
+                    // Fondos solo para otros modos (si se agregan en el futuro)
+                    if !emoji.isEmpty {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(backgroundForSymbol)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(
+                                        strokeColorForSymbol,
+                                        lineWidth: 3
+                                    )
+                            )
+                            .shadow(color: shadowColorForSymbol, radius: 8)
+                    }
+                }
+
+                // Texto del símbolo con estilo mejorado
+                Text(emoji)
+                    .font(.system(size: cellSize * 0.5, weight: .black, design: .rounded))
+                    .foregroundStyle(symbolGradient)
+                    .shadow(color: shadowColorForSymbol.opacity(0.8), radius: 3)
+                    .scaleEffect(bounceEffect ? 1.2 : 1.0)
+                    .scaleEffect(isPressed ? 0.9 : 1.0)
+            }
+            .frame(width: cellSize - 6, height: cellSize - 6)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
-        .contentShape(Rectangle())
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            isPressed = pressing
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
         }, perform: {})
     }
 
-    private var symbolColor: Color {
-        if gameMode == .unbeatableMode {
-            if emoji == "○" {
-                return Color.pink // Usa color rosa para mejor visibilidad
-            } else if emoji == "×" {
-                return Color.purple // Usa color púrpura para mejor visibilidad
+    private var backgroundForSymbol: LinearGradient {
+        if emoji == "○" {
+            return LinearGradient(
+                colors: [.pink.opacity(0.8), .purple.opacity(0.6)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else if emoji == "×" {
+            return LinearGradient(
+                colors: [.blue.opacity(0.8), .cyan.opacity(0.6)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        return LinearGradient(colors: [.clear], startPoint: .top, endPoint: .bottom)
+    }
+
+    private var symbolGradient: LinearGradient {
+        if emoji == "○" {
+            return LinearGradient(
+                colors: [.white, .yellow],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else if emoji == "×" {
+            return LinearGradient(
+                colors: [.white, .orange],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        return LinearGradient(colors: [.white], startPoint: .top, endPoint: .bottom)
+    }
+
+    private var strokeColorForSymbol: Color {
+        if emoji == "○" {
+            return .pink.opacity(0.8)
+        } else if emoji == "×" {
+            return .blue.opacity(0.8)
+        }
+        return .clear
+    }
+
+    private var shadowColorForSymbol: Color {
+        if emoji == "○" {
+            return .pink
+        } else if emoji == "×" {
+            return .blue
+        }
+        return .clear
+    }
+
+    private func triggerBounceEffect() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            bounceEffect = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                bounceEffect = false
             }
         }
-        return Color.primary
     }
 
     private func triggerHaptic() {
         #if canImport(UIKit)
-        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         #endif
     }

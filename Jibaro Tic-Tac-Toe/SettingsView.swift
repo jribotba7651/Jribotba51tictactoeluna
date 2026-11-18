@@ -1,14 +1,50 @@
 import SwiftUI
+import Foundation
+
+// MARK: - Temporary Inline Definitions (to fix compilation)
+class LocalizationManagerTemp: ObservableObject {
+    static let shared = LocalizationManagerTemp()
+    @Published var currentLanguage = "en"
+
+    func localizedString(for key: String) -> String {
+        let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
+        let strings: [String: String] = [
+            "settings": isSpanish ? "Configuración" : "Settings",
+            "done": isSpanish ? "Listo" : "Done",
+            "player_1": isSpanish ? "Jugador 1" : "Player 1",
+            "player_2": isSpanish ? "Jugador 2" : "Player 2",
+            "language": isSpanish ? "Idioma:" : "Language:",
+            "reset_scores": isSpanish ? "Reiniciar Puntuaciones" : "Reset Scores"
+        ]
+        return strings[key] ?? key
+    }
+}
+
+class DiagnosticsManagerTemp: ObservableObject {
+    static let shared = DiagnosticsManagerTemp()
+    @Published var logs: [String] = []
+    @Published var adMobStatus = "OK"
+    @Published var iapStatus = "OK"
+
+    func log(_ message: String, type: String = "info") {
+        print("[\(type)] \(message)")
+    }
+
+    func clearLogs() {
+        logs.removeAll()
+    }
+}
 
 struct SettingsView: View {
     @ObservedObject var gameLogic: GameLogic
     @StateObject private var dataManager = DataManager.shared
+    @ObservedObject private var localization = LocalizationManagerTemp.shared
 
     var body: some View {
         NavigationView {
             ZStack {
-                // Fondo con color de configuración
-                Color.settingsBackground
+                // Fondo con gradiente de Luna Mode
+                LinearGradient.lunaMode
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -37,6 +73,9 @@ struct SettingsView: View {
                         // Compras In-App
                         PurchaseSection()
 
+                        // Diagnóstico (Solo visible para depuración)
+                        DiagnosticsSection()
+
                         Spacer(minLength: 30)
                     }
                     .padding(.horizontal, 20)
@@ -60,12 +99,12 @@ struct SettingsView: View {
                             Text("Menú")
                                 .font(.headline)
                         }
-                        .foregroundColor(.primary)
+                        .foregroundColor(.white)
                         .padding(.horizontal, 15)
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white.opacity(0.8))
+                                .fill(Color.white.opacity(0.2))
                         )
                     }
                     .buttonAnimation()
@@ -76,7 +115,7 @@ struct SettingsView: View {
                     Text("Configuración")
                         .font(.system(size: 20))
                         .fontWeight(.bold)
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
 
                     Spacer()
 
@@ -86,12 +125,12 @@ struct SettingsView: View {
                     }) {
                         Text("Listo")
                             .font(.headline)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.white)
                             .padding(.horizontal, 15)
                             .padding(.vertical, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color.white.opacity(0.8))
+                                    .fill(Color.white.opacity(0.2))
                             )
                     }
                     .buttonAnimation()
@@ -118,7 +157,7 @@ struct PlayerConfigurationSection: View {
             Text(title)
                 .font(.system(size: 20))
                 .fontWeight(.bold)
-                .foregroundColor(titleColor)
+                .foregroundColor(.white)
                 .textShadow()
 
             VStack(spacing: 20) {
@@ -134,7 +173,7 @@ struct PlayerConfigurationSection: View {
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.black.opacity(0.8))
+                                .fill(Color.white.opacity(0.9))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(borderColor.opacity(0.6), lineWidth: 2)
@@ -211,7 +250,7 @@ struct GameConfigurationSection: View {
             Text("Configuración del Juego")
                 .font(.system(size: 20))
                 .fontWeight(.bold)
-                .foregroundColor(.playerTitlePurple)
+                .foregroundColor(.white)
                 .textShadow()
 
             VStack(spacing: 20) {
@@ -226,6 +265,11 @@ struct GameConfigurationSection: View {
                     Toggle("", isOn: $dataManager.soundEnabled)
                         .scaleEffect(0.8)
                 }
+
+                Divider()
+
+                // Language selector
+                LanguageSelectorView()
 
                 Divider()
 
@@ -278,10 +322,11 @@ struct PurchaseSection: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("💰 Compras")
+            Text("Compras")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.playerTitlePurple)
+                .foregroundColor(.white)
+                .textShadow()
 
             if purchaseManager.hasRemovedAds {
                 // Usuario ya compró la remoción de anuncios
@@ -313,7 +358,7 @@ struct PurchaseSection: View {
                 VStack(spacing: 15) {
                     HStack {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text("🚫 Remover Anuncios")
+                            Text("Remover Anuncios")
                                 .font(.headline)
                                 .fontWeight(.semibold)
                             Text("Disfruta del juego sin interrupciones")
@@ -402,7 +447,86 @@ struct PurchaseSection: View {
     }
 }
 
+// MARK: - Language Selector View
+struct LanguageSelectorView: View {
+    @StateObject private var localization = LocalizationManagerTemp.shared
+
+    var body: some View {
+        HStack {
+            Text(localization.localizedString(for: "language"))
+                .font(.headline)
+                .foregroundColor(.black)
+
+            Spacer()
+
+            Spacer()
+
+            HStack {
+                Text("🇪🇸 Español")
+                    .foregroundColor(.black)
+                Spacer()
+                Image(systemName: "checkmark")
+                    .foregroundColor(.blue)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.gray.opacity(0.1))
+                )
+            }
+        }
+    }
+
 // MARK: - Preview
 #Preview {
     SettingsView(gameLogic: GameLogic())
+}
+
+// MARK: - Diagnostics Section
+struct DiagnosticsSection: View {
+    @StateObject private var diagnostics = DiagnosticsManagerTemp.shared
+    @State private var isExpanded = false
+
+    var body: some View {
+        // Simplified diagnostics section for compilation
+        VStack {
+            Text("🩺 Diagnósticos")
+                .font(.headline)
+                .foregroundColor(.white)
+
+            Text("Estado: OK")
+                .foregroundColor(.white)
+        }
+        .padding()
+        .background(Color.blue.opacity(0.8))
+        .cornerRadius(15)
+    }
+}
+
+struct StatusCard: View {
+    let title: String
+    let status: String
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.gray)
+            Text(status)
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(.black)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(Color.white)
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
+    }
 }

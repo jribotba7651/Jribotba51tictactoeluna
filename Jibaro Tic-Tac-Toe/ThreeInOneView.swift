@@ -1,5 +1,24 @@
 import SwiftUI
 
+// MARK: - ThreeInOne Localization Helpers
+func localizedThreeInOneString(for key: String) -> String {
+    let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
+    let strings: [String: String] = [
+        "three_in_one_puzzle": isSpanish ? "Rompecabezas Tres en Uno" : "Three-in-One Puzzle",
+        "choose_variant": isSpanish ? "Elige una variante" : "Choose a variant",
+        "back": isSpanish ? "Volver" : "Back",
+        "player_turn": isSpanish ? "Turno de Jugador" : "Player's turn",
+        "player_1": isSpanish ? "Jugador 1" : "Player 1",
+        "player_2": isSpanish ? "Jugador 2" : "Player 2",
+        "player_1_won": isSpanish ? "🎉 ¡Jugador 1 ganó!" : "🎉 Player 1 won!",
+        "player_2_won": isSpanish ? "🎊 ¡Jugador 2 ganó!" : "🎊 Player 2 won!",
+        "draw": isSpanish ? "🤝 ¡Empate!" : "🤝 Draw!",
+        "time_remaining": isSpanish ? "Tiempo restante" : "Time remaining",
+        "new_game": isSpanish ? "Nueva Partida" : "New Game"
+    ]
+    return strings[key] ?? key
+}
+
 struct ThreeInOneView: View {
     @ObservedObject var gameLogic: InfinityGameLogic
     let onBack: () -> Void
@@ -34,14 +53,14 @@ struct ThreeInOneView: View {
     private var variantSelectorView: some View {
         VStack(spacing: 0) {
             // Header
-            headerView(title: "Three-in-One Puzzle")
+            headerView(title: localizedThreeInOneString(for: "three_in_one_puzzle"))
             
             // Selector de variantes
             ScrollView {
                 VStack(spacing: 20) {
                     Spacer(minLength: 20)
                     
-                    Text("Elige una variante")
+                    Text(localizedThreeInOneString(for: "choose_variant"))
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
@@ -64,7 +83,7 @@ struct ThreeInOneView: View {
     private var gamePlayView: some View {
         VStack(spacing: 0) {
             // Header
-            headerView(title: gameLogic.threeInOneState.variant.rawValue)
+            headerView(title: gameLogic.threeInOneState.variant.displayName)
             
             Spacer()
             
@@ -106,7 +125,7 @@ struct ThreeInOneView: View {
                 }) {
                     HStack(spacing: 6) {
                         Image(systemName: "chevron.left")
-                        Text("Volver")
+                        Text(localizedThreeInOneString(for: "back"))
                     }
                     .font(.headline)
                     .foregroundColor(.white)
@@ -175,7 +194,7 @@ struct ThreeInOneView: View {
                         .fill(gameLogic.threeInOneState.currentPlayer == .player1 ? Color.pink : Color.cyan)
                         .frame(width: 12, height: 12)
                     
-                    Text("Turno de \(gameLogic.threeInOneState.currentPlayer == .player1 ? "Jugador 1" : "Jugador 2")")
+                    Text("\(localizedThreeInOneString(for: "player_turn")) \(gameLogic.threeInOneState.currentPlayer == .player1 ? localizedThreeInOneString(for: "player_1") : localizedThreeInOneString(for: "player_2"))")
                         .font(.headline)
                         .foregroundColor(.white)
                 }
@@ -191,11 +210,11 @@ struct ThreeInOneView: View {
     
     private var victoryMessage: String {
         if gameLogic.threeInOneWinner == .player1 {
-            return "🎉 ¡Jugador 1 ganó!"
+            return localizedThreeInOneString(for: "player_1_won")
         } else if gameLogic.threeInOneWinner == .player2 {
-            return "🎊 ¡Jugador 2 ganó!"
+            return localizedThreeInOneString(for: "player_2_won")
         } else {
-            return "🤝 ¡Empate!"
+            return localizedThreeInOneString(for: "draw")
         }
     }
     
@@ -205,35 +224,38 @@ struct ThreeInOneView: View {
         GeometryReader { geometry in
             let availableSize = min(geometry.size.width - 40, geometry.size.height - 100)
             let boardSize = availableSize
-            let cellSize = (boardSize - 4) / 3  // -4 for 2px spacing between cells
+            let cellSize = boardSize / 3
 
             VStack(spacing: 0) {
-                // Tablero 3x3 PERFECTAMENTE PROPORCIONAL
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.fixed(cellSize), spacing: 2), count: 3),
-                    spacing: 2
-                ) {
-                    ForEach(0..<9, id: \.self) { index in
-                        let row = index / 3
-                        let col = index % 3
-
-                        ThreeInOneCellView(
-                            row: row,
-                            col: col,
-                            player: gameLogic.threeInOneState.board[row, col].player,
-                            cellSize: cellSize  // Tamaño calculado dinámicamente
-                        ) {
-                            gameLogic.makeThreeInOneMove(row: row, col: col)
-                        }
-                    }
-                }
-                .frame(width: boardSize, height: boardSize)  // Forzar tablero cuadrado
-                .padding(12)
-                .background(
+                ZStack {
+                    // Background
                     RoundedRectangle(cornerRadius: 20)
                         .fill(Color.white.opacity(0.15))
                         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
-                )
+
+                    // Grid lines (# shape)
+                    threeInOneGridLines(cellSize: cellSize)
+
+                    // Grid cells
+                    VStack(spacing: 0) {
+                        ForEach(0..<3, id: \.self) { row in
+                            HStack(spacing: 0) {
+                                ForEach(0..<3, id: \.self) { col in
+                                    ThreeInOneGameGridCell(
+                                        row: row,
+                                        col: col,
+                                        player: gameLogic.threeInOneState.board[row, col].player,
+                                        cellSize: cellSize
+                                    ) {
+                                        gameLogic.makeThreeInOneMove(row: row, col: col)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                .frame(width: boardSize, height: boardSize)
+                .padding(12)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
@@ -241,12 +263,32 @@ struct ThreeInOneView: View {
         .frame(height: 350)  // Altura fija para el contenedor
         .padding(.horizontal, 20)
     }
+
+    private func threeInOneGridLines(cellSize: CGFloat) -> some View {
+        ZStack {
+            // Vertical lines (excluding borders)
+            ForEach(1..<3, id: \.self) { index in
+                Rectangle()
+                    .fill(Color.cyan.opacity(0.6))
+                    .frame(width: 2.5, height: cellSize * 3)
+                    .offset(x: CGFloat(index) * cellSize - (cellSize * 1.5) + (cellSize / 2) - 1.25)
+            }
+
+            // Horizontal lines (excluding borders)
+            ForEach(1..<3, id: \.self) { index in
+                Rectangle()
+                    .fill(Color.cyan.opacity(0.6))
+                    .frame(width: cellSize * 3, height: 2.5)
+                    .offset(y: CGFloat(index) * cellSize - (cellSize * 1.5) + (cellSize / 2) - 1.25)
+            }
+        }
+    }
     
     // MARK: - Timer
     
     private var timerView: some View {
         VStack(spacing: 8) {
-            Text("Tiempo restante")
+            Text(localizedThreeInOneString(for: "time_remaining"))
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.8))
             
@@ -278,7 +320,7 @@ struct ThreeInOneView: View {
                     gameLogic.selectThreeInOneVariant(gameLogic.threeInOneState.variant)
                 }
             }) {
-                Text("Nueva Partida")
+                Text(localizedThreeInOneString(for: "new_game"))
                     .font(.headline)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -325,7 +367,7 @@ struct VariantCard: View {
                     .frame(width: 50)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(variant.rawValue)
+                    Text(variant.displayName)
                         .font(.title3)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -351,27 +393,24 @@ struct VariantCard: View {
     }
 }
 
-// MARK: - Three-in-One Cell View
+// MARK: - Three-In-One Game Grid Cell Component
 
-struct ThreeInOneCellView: View {
+struct ThreeInOneGameGridCell: View {
     let row: Int
     let col: Int
     let player: Player
     let cellSize: CGFloat
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // Fondo
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.cyan.opacity(0.3), lineWidth: 2)
-                    )
-                
-                // Símbolo del jugador
+                // Transparent background for touch target
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: cellSize, height: cellSize)
+
+                // Player symbol
                 if player != .none {
                     Text(player == .player1 ? "○" : "×")
                         .font(.system(size: cellSize * 0.5, weight: .bold))
@@ -379,7 +418,6 @@ struct ThreeInOneCellView: View {
                 }
             }
         }
-        .frame(width: cellSize, height: cellSize)
         .buttonStyle(PlainButtonStyle())
     }
 }

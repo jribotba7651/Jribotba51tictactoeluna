@@ -163,11 +163,16 @@ class ConfettiUIView: UIView {
 // Extension para el modifier
 extension View {
     func confetti(isActive: Binding<Bool>) -> some View {
-        self.overlay(
-            ConfettiView(isActive: isActive.wrappedValue)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .allowsHitTesting(false)
-                .id(isActive.wrappedValue) // Force recreation when state changes
-        )
+        ZStack {
+            self
+
+            if isActive.wrappedValue {
+                ConfettiView(isActive: isActive.wrappedValue)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea(.all) // Ignorar safe area para evitar shifting
+                    .allowsHitTesting(false)
+                    .id(isActive.wrappedValue) // Force recreation when state changes
+            }
+        }
     }
 }

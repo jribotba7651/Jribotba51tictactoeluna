@@ -15,6 +15,13 @@ class GameLogic: ObservableObject {
 
     init() {
         updateGameMessage()
+        // Reset del contador para debugging/testing - remove en producción
+        #if DEBUG
+        // Comentar esta línea si quieres mantener el contador actual
+        // UserDefaults.standard.set(0, forKey: "totalGamesPlayed")
+        let currentGames = UserDefaults.standard.integer(forKey: "totalGamesPlayed")
+        print("🎮 GameLogic initialized - current game count: \(currentGames)")
+        #endif
     }
 
     // MARK: - Gestión del estado del juego
@@ -213,7 +220,38 @@ class GameLogic: ObservableObject {
         // Actualizar puntuaciones
         dataManager.addWin(for: winner)
 
+        // Incrementar contador de juegos y mostrar anuncio interstitial si es necesario
+        incrementGameCountAndShowAdIfNeeded()
+
         updateGameMessage()
+    }
+
+    // MARK: - Gestión de anuncios intersticiales
+    private func incrementGameCountAndShowAdIfNeeded() {
+        // Obtener contador actual de UserDefaults
+        let currentCount = UserDefaults.standard.integer(forKey: "totalGamesPlayed")
+        let newCount = currentCount + 1
+
+        // Guardar nuevo contador
+        UserDefaults.standard.set(newCount, forKey: "totalGamesPlayed")
+
+        print("🎮 Game finished! Total games played: \(newCount)")
+        print("🎮 Checking if should show ad: \(newCount) % 10 = \(newCount % 10)")
+
+        // Verificar si debemos mostrar anuncio interstitial
+        let adManager = AdManager.shared
+        if adManager.shouldShowAdAfterGames(newCount) {
+            print("🎬 Showing interstitial ad after \(newCount) games")
+
+            // Esperar un poco para que el usuario vea el resultado, luego mostrar el anuncio
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                print("🎬 Ready to present interstitial ad - showing now")
+                adManager.presentInterstitialAd()
+            }
+        } else {
+            let nextAdAt = ((newCount / 10) + 1) * 10
+            print("📊 Next interstitial ad will show at game #\(nextAdAt)")
+        }
     }
 
     // MARK: - Mensajes del juego
@@ -241,12 +279,14 @@ class GameLogic: ObservableObject {
             case .infinityLevel:
                 switch winner {
                 case .player1:
-                    gameMessage = "¡Infinito logrado! ∞✨"
+                    gameMessage = "¡\(dataManager.getPlayerName(for: .player1)) ganó infinitamente! ∞🎉"
                 case .player2:
-                    gameMessage = "¡Papá ⭐ alcanza lo infinito! ∞"
+                    gameMessage = "¡\(dataManager.getPlayerName(for: .player2)) ganó infinitamente! ∞⭐"
                 case .none:
                     gameMessage = "¡Empate infinito! ∞🏆"
                 }
+            case .memoryMatch:
+                gameMessage = "¡Memory Match completado! 🧠🎉"
             }
         } else {
             switch gameMode {
@@ -262,6 +302,8 @@ class GameLogic: ObservableObject {
             case .infinityLevel:
                 let playerName = dataManager.getPlayerName(for: currentPlayer)
                 gameMessage = "Turno infinito de \(playerName) ∞"
+            case .memoryMatch:
+                gameMessage = "¡Encuentra las parejas! 🧠✨"
             }
         }
     }

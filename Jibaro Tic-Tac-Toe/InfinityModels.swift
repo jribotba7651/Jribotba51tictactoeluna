@@ -167,18 +167,31 @@ class InfiniteBoardState {
 // MARK: - Three-in-One Models
 
 enum ThreeInOneVariant: String, CaseIterable {
-    case classic = "Clásico"
-    case timed = "Cronometrado"
-    case pattern = "Patrón"
-    
-    var description: String {
+    case classic = "classic"
+    case timed = "timed"
+    case pattern = "pattern"
+
+    var displayName: String {
+        let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
         switch self {
         case .classic:
-            return "Tic-Tac-Toe tradicional de 3x3"
+            return isSpanish ? "Clásico" : "Classic"
         case .timed:
-            return "30 segundos por movimiento"
+            return isSpanish ? "Cronometrado" : "Timed"
         case .pattern:
-            return "Gana creando patrones específicos"
+            return isSpanish ? "Patrón" : "Pattern"
+        }
+    }
+
+    var description: String {
+        let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
+        switch self {
+        case .classic:
+            return isSpanish ? "Tic-Tac-Toe tradicional de 3x3" : "Traditional 3x3 Tic-Tac-Toe"
+        case .timed:
+            return isSpanish ? "30 segundos por movimiento" : "30 seconds per move"
+        case .pattern:
+            return isSpanish ? "Gana creando patrones específicos" : "Win by creating specific patterns"
         }
     }
     

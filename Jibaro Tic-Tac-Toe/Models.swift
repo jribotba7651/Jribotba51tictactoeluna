@@ -5,40 +5,49 @@ import SwiftUI
 enum GameMode: CaseIterable {
     case lunaMode
     case unbeatableMode
+    case memoryMatch
     case infinityLevel
 
     var title: String {
+        let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
         switch self {
-        case .lunaMode: return "Luna Mode"
-        case .unbeatableMode: return "Unbeatable Mode"
+        case .lunaMode: return isSpanish ? "🌙 Modo Luna" : "🌙 Luna Mode"
+        case .unbeatableMode: return isSpanish ? "🤖 Modo Invencible" : "🤖 Unbeatable Mode"
         case .infinityLevel: return "Infinity Level"
+        case .memoryMatch: return isSpanish ? "🧠 Memoria Boricua" : "🧠 Boricua Memory"
         }
     }
 
     var subtitle: String {
+        let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
         switch self {
-        case .lunaMode: return "Tú y Luna vs la diversión"
-        case .unbeatableMode: return "Desafía a la IA imposible"
+        case .lunaMode: return isSpanish ? "Tú y Luna vs la diversión" : "You and Luna vs fun"
+        case .unbeatableMode: return isSpanish ? "Desafía a la IA imposible" : "Challenge the unbeatable AI"
         case .infinityLevel: return "Modo infinito con Papá ⭐"
+        case .memoryMatch: return isSpanish ? "Encuentra las parejas boricuas" : "Find the boricua pairs"
         }
     }
 
     var icon: String {
         switch self {
-        case .lunaMode: return "🌙"
-        case .unbeatableMode: return "🤖"
+        case .lunaMode: return ""
+        case .unbeatableMode: return ""
         case .infinityLevel: return "∞"
+        case .memoryMatch: return "🧠"
         }
     }
 
     var features: [String] {
+        let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
         switch self {
         case .lunaMode:
-            return ["Luna 🌙 vs Papá ⭐", "Efectos mágicos ✨", "Mensajes en español 💕"]
+            return isSpanish ? ["Luna 🌙 vs Papá ⭐", "Efectos mágicos ✨", "Mensajes en español 💕"] : ["Luna 🌙 vs Papa ⭐", "Magical effects ✨", "Family fun 💕"]
         case .unbeatableMode:
-            return ["IA imbatible", "Algoritmo Minimax", "¡Atrévete a intentarlo!"]
+            return isSpanish ? ["IA imbatible", "Algoritmo Minimax", "¡Atrévete a intentarlo!"] : ["Unbeatable AI", "Minimax Algorithm", "Dare to try!"]
         case .infinityLevel:
             return ["Modo infinito", "Papá ⭐ especial", "Próximamente..."]
+        case .memoryMatch:
+            return isSpanish ? ["Símbolos boricuas 🇵🇷", "12 cartas coloridas 🌈", "Memoria y diversión 🎉"] : ["Boricua symbols 🇵🇷", "12 colorful cards 🌈", "Memory and fun 🎉"]
         }
     }
 
@@ -50,6 +59,8 @@ enum GameMode: CaseIterable {
             return [Color.blue.opacity(0.8), Color.purple.opacity(0.6)]
         case .infinityLevel:
             return [Color.purple.opacity(0.8), Color.indigo.opacity(0.6)]
+        case .memoryMatch:
+            return [Color.green.opacity(0.8), Color.teal.opacity(0.6)]
         }
     }
 }

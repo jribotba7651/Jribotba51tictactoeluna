@@ -1,4 +1,18 @@
 import SwiftUI
+import Foundation
+
+// MARK: - Simple Localization Helper
+func localizedString(for key: String) -> String {
+    let isSpanish = UserDefaults.standard.string(forKey: "AppLanguage") == "es"
+    let strings: [String: String] = [
+        "back_button": isSpanish ? "Volver" : "Back",
+        "infinite_tic_tac_toe": isSpanish ? "Tic-Tac-Toe Infinito" : "Infinite Tic-Tac-Toe",
+        "luna_turn": isSpanish ? "Turno de Luna 🌙" : "Luna 🌙's turn",
+        "papa_turn": isSpanish ? "Turno de Papá ⭐" : "Papa ⭐'s turn",
+        "new_game": isSpanish ? "Nueva Partida" : "New Game"
+    ]
+    return strings[key] ?? key
+}
 
 struct InfiniteTicTacToeView: View {
     @ObservedObject var gameLogic: InfinityGameLogic
@@ -42,7 +56,7 @@ struct InfiniteTicTacToeView: View {
                 Button(action: onBack) {
                     HStack(spacing: 6) {
                         Image(systemName: "chevron.left")
-                        Text("Volver")
+                        Text(localizedString(for: "back_button"))
                     }
                     .font(.headline)
                     .foregroundColor(.white)
@@ -79,7 +93,7 @@ struct InfiniteTicTacToeView: View {
             
             // Título
             VStack(spacing: 4) {
-                Text("Infinite Tic-Tac-Toe")
+                Text(localizedString(for: "infinite_tic_tac_toe"))
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
@@ -124,22 +138,8 @@ struct InfiniteTicTacToeView: View {
             let boardHeight = CGFloat(gameLogic.infiniteBoard.maxRow - gameLogic.infiniteBoard.minRow + 1) * cellSize
             
             ZStack {
-                // Tablero
-                VStack(spacing: 0) {
-                    ForEach(gameLogic.infiniteBoard.minRow...gameLogic.infiniteBoard.maxRow, id: \.self) { row in
-                        HStack(spacing: 0) {
-                            ForEach(gameLogic.infiniteBoard.minCol...gameLogic.infiniteBoard.maxCol, id: \.self) { col in
-                                InfiniteCellView(
-                                    position: GridPosition(row: row, col: col),
-                                    player: gameLogic.infiniteBoard[GridPosition(row: row, col: col)],
-                                    cellSize: cellSize
-                                ) {
-                                    gameLogic.makeInfiniteMove(at: GridPosition(row: row, col: col))
-                                }
-                            }
-                        }
-                    }
-                }
+                // Tablero usando cuadrícula # personalizada
+                infiniteGameGrid
                 .frame(width: boardWidth, height: boardHeight)
                 .offset(x: offset.width + dragOffset.width, y: offset.height + dragOffset.height)
                 .scaleEffect(scale)
@@ -238,8 +238,8 @@ struct InfiniteTicTacToeView: View {
             if !gameLogic.infiniteIsGameOver {
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(gameLogic.infiniteCurrentPlayer == .player1 ? Color.pink : Color.purple)
-                        .frame(width: 12, height: 12)
+                    .fill(gameLogic.infiniteCurrentPlayer == .player1 ? Color.pink : Color.purple)
+                    .frame(width: 12, height: 12)
                     
                     Text("Turno de \(gameLogic.infiniteCurrentPlayer == .player1 ? "Luna 🌙" : "Papá ⭐")")
                         .font(.headline)
@@ -321,7 +321,75 @@ struct InfiniteTicTacToeView: View {
             .padding(.horizontal, 20)
         }
     }
-    
+
+    // MARK: - Infinite Game Grid
+
+    private var infiniteGameGrid: some View {
+        let rows = gameLogic.infiniteBoard.maxRow - gameLogic.infiniteBoard.minRow + 1
+        let cols = gameLogic.infiniteBoard.maxCol - gameLogic.infiniteBoard.minCol + 1
+
+        return ZStack {
+            // Background
+            Rectangle()
+                .fill(Color.white.opacity(0.1))
+                .frame(
+                    width: CGFloat(cols) * cellSize,
+                    height: CGFloat(rows) * cellSize
+                )
+                .cornerRadius(12)
+
+            // Grid lines (# shape)
+            infiniteGridLines(rows: rows, cols: cols)
+
+            // Grid cells
+            VStack(spacing: 0) {
+                ForEach(gameLogic.infiniteBoard.minRow...gameLogic.infiniteBoard.maxRow, id: \.self) { row in
+                    HStack(spacing: 0) {
+                        ForEach(gameLogic.infiniteBoard.minCol...gameLogic.infiniteBoard.maxCol, id: \.self) { col in
+                            InfiniteGameGridCell(
+                                position: GridPosition(row: row, col: col),
+                                player: gameLogic.infiniteBoard[GridPosition(row: row, col: col)],
+                                cellSize: cellSize
+                            ) {
+                                gameLogic.makeInfiniteMove(at: GridPosition(row: row, col: col))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func infiniteGridLines(rows: Int, cols: Int) -> some View {
+        ZStack {
+            // Vertical lines (excluding borders)
+            ForEach(1..<cols, id: \.self) { index in
+                Rectangle()
+                    .fill(Color.white.opacity(0.4))
+                    .frame(
+                        width: 2,
+                        height: CGFloat(rows) * cellSize
+                    )
+                    .offset(
+                        x: CGFloat(index) * cellSize - (CGFloat(cols) * cellSize / 2) + (cellSize / 2) - 1
+                    )
+            }
+
+            // Horizontal lines (excluding borders)
+            ForEach(1..<rows, id: \.self) { index in
+                Rectangle()
+                    .fill(Color.white.opacity(0.4))
+                    .frame(
+                        width: CGFloat(cols) * cellSize,
+                        height: 2
+                    )
+                    .offset(
+                        y: CGFloat(index) * cellSize - (CGFloat(rows) * cellSize / 2) + (cellSize / 2) - 1
+                    )
+            }
+        }
+    }
+
     // MARK: - Helpers
     
     private func resetView() {
@@ -332,28 +400,23 @@ struct InfiniteTicTacToeView: View {
     }
 }
 
-// MARK: - Infinite Cell View
+// MARK: - Infinite Game Grid Cell Component
 
-struct InfiniteCellView: View {
+struct InfiniteGameGridCell: View {
     let position: GridPosition
     let player: Player
     let cellSize: CGFloat
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // Fondo
+                // Transparent background for touch target
                 Rectangle()
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.clear)
                     .frame(width: cellSize, height: cellSize)
-                
-                // Bordes
-                Rectangle()
-                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                    .frame(width: cellSize, height: cellSize)
-                
-                // Símbolo del jugador
+
+                // Player symbol
                 if player != .none {
                     Text(player == .player1 ? "○" : "×")
                         .font(.system(size: cellSize * 0.6, weight: .bold))
@@ -364,7 +427,6 @@ struct InfiniteCellView: View {
         .buttonStyle(PlainButtonStyle())
     }
 }
-
 
 // MARK: - Preview
 

@@ -26,6 +26,7 @@
 		3D0E1A412B5F1A4500000001 /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E1A402B5F1A4500000001 /* DataManager.swift */; };
 		3D0E1A432B5F1A4A00000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E1A422B5F1A4A00000001 /* Models.swift */; };
 		3D0E1A452B5F1A5000000001 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D0E1A442B5F1A5000000001 /* Extensions.swift */; };
+		D2A9C3D0E7284C0F93318E1C /* MemoryMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936187BF2B654D4BBF8BC49B /* MemoryMatchView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +49,7 @@
 		3D0E1A402B5F1A4500000001 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		3D0E1A422B5F1A4A00000001 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		3D0E1A442B5F1A5000000001 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		936187BF2B654D4BBF8BC49B /* MemoryMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryMatchView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +86,7 @@
 				3D0E1A2A2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift */,
 				3D0E1A2C2B5F1A1000000001 /* ContentView.swift */,
 				3D0E1A382B5F1A3000000001 /* MenuView.swift */,
+				936187BF2B654D4BBF8BC49B /* MemoryMatchView.swift */,
 				3D0E1A3A2B5F1A3500000001 /* GameView.swift */,
 				3D0E1A3C2B5F1A3A00000001 /* SettingsView.swift */,
 				3D0E1A3E2B5F1A4000000001 /* GameLogic.swift */,
@@ -197,6 +200,7 @@
 				3D0E1A3B2B5F1A3500000001 /* GameView.swift in Sources */,
 				3D0E1A412B5F1A4500000001 /* DataManager.swift in Sources */,
 				3D0E1A392B5F1A3000000001 /* MenuView.swift in Sources */,
+				D2A9C3D0E7284C0F93318E1C /* MemoryMatchView.swift in Sources */,
 				3D0E1A2B2B5F1A1000000001 /* Jibaro_Tic_Tac_ToeApp.swift in Sources */,
 				2F6CD2E22EEE15E70044BC80 /* ConfettiView.swift in Sources */,
 				3D0E1A3D2B5F1A3A00000001 /* SettingsView.swift in Sources */,
@@ -335,7 +339,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"Jibaro Tic-Tac-Toe/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -349,7 +353,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jibarosenlaluna.Jibaro-Tic-Tac-Toe";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -364,7 +368,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_ASSET_PATHS = "\"Jibaro Tic-Tac-Toe/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -378,7 +382,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jibarosenlaluna.Jibaro-Tic-Tac-Toe";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
